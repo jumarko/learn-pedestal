@@ -8,7 +8,8 @@
 (defn start-server []
   (->> {::http/routes #{}
         ::http/type :jetty
-        ::http/port 3000
+        ;; use 3001 instead of 3000 to avoid conflicts with Backstage and other apps commonly using 3000
+        ::http/port 3001
         ::http/join? false}
        http/create-server
        http/start
@@ -23,6 +24,10 @@
   (start-server))
 
 (comment
-  (start-server)
   (restart-server)
+
+  (start-server)
+
+  (stop-server)
+
   .)
