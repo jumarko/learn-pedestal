@@ -17,7 +17,10 @@
 ;; See http://pedestal.io/reference/defining-routes
 (def table-routes
   (route/expand-routes
-   #{{:app-name :cheffy :schema :http :host "learnpedestal.com"}
+   ;; IMPORTANT: make sure that `:host` matches your hostname, most likely 'localhost'
+   ;; - otherwise you will get NOT FOUND in the browser when you try something like
+   ;;      http://localhost:3001/recipes
+   #{{:app-name :cheffy :schema :http :host "localhost"}
      ;; now define the routes themselves
      ["/recipes" :get list-recipes :route-name :list-recipes]
      ["/recipes" :post upsert-recipe :route-name :create-recipe]

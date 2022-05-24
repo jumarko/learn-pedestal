@@ -34,8 +34,24 @@
 
   (stop-server)
 
+  ;; let's examine the routes:
+  (second (::http/routes @system-ref))
+  ;; => {:path "/recipes",
+  ;;     :method :get,
+  ;;     :app-name :cheffy,
+  ;;     :path-re #"/\Qrecipes\E",
+  ;;     :path-parts ["recipes"],
+  ;;     :host "localhost",
+  ;;     :interceptors
+  ;;     [{:name nil,
+  ;;       :enter #function[io.pedestal.interceptor/eval288/fn--289/fn--290],
+  ;;       :leave nil,
+  ;;       :error nil}],
+  ;;     :route-name :list-recipes,
+  ;;     :path-params []}
+
   ;; try some routes manually - see http://pedestal.io/guides/hello-world#_routes
-  (route/try-routing-for routes/table-routes :prefix-tree "/recipes" :get)
+  (route/try-routing-for routes/table-routes :map-tree "/recipes" :get)
   ;; 1. Unhandled java.lang.NullPointerException
   ;; Cannot invoke "clojure.lang.IFn.invoke(Object, Object)"
 
