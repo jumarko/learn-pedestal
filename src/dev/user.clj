@@ -19,7 +19,7 @@
         (reset! system-ref))))
 
 (defn stop-server []
-  (some-> @system-ref http/stop))
+  (some-> @system-ref component/stop))
 
 (defn restart-server []
   (stop-server)
