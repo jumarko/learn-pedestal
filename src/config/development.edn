@@ -1,5 +1,4 @@
-;; Some basic http configuration here:
-{:io.pedestal.http/type :jetty
- ;; use 3001 instead of 3000 to avoid conflicts with Backstage and other apps commonly using 3000
- :io.pedestal.http/port 3001
- :io.pedestal.http/join? false}
+{:service-map {:io.pedestal.http/type :jetty
+               ;; use 3001 instead of 3000 to avoid conflicts with Backstage and other apps commonly using 3000
+               :io.pedestal.http/port 3001
+               :io.pedestal.http/join? false}}
