@@ -59,4 +59,8 @@
   ;; Cannot invoke "clojure.lang.IFn.invoke(Object, Object)"
   ;;; ???
 
+
+  ;; check the db component
+  (:database @system-ref)
+
   .)
