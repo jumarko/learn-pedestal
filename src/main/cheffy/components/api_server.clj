@@ -25,7 +25,10 @@
   .)
 
 ;; ... but let's try with `defrecord` for now:
-(defrecord ApiServer [service-map service]
+;; service-map is our "parameters"
+;; service is our "runtime"
+;; database is our "dependencies"
+(defrecord ApiServer [service-map service database]
   component/Lifecycle
   (start [this]
     (assoc this :service (start-server service-map)))
