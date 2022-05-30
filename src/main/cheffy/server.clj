@@ -8,7 +8,8 @@
 (defn create-system [config]
   (component/system-map
    :config config
-   :api-server (api-server/make-api-server (:service-map config))
+   :api-server (component/using (api-server/make-api-server (:service-map config))
+                               [:database])
    :database (database/make-db (:database config))))
 
 ;; define main method to be able to start our server
