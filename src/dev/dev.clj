@@ -31,4 +31,7 @@
   (keys cr/system)
 ;; => (:config :api-server :database)
 
+  ;; let's look at :api-server
+  (:api-server cr/system)
+
   .)

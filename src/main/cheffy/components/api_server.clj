@@ -1,13 +1,24 @@
 (ns cheffy.components.api-server
   (:require
+   [cheffy.routes :as routes]
    [com.stuartsierra.component :as component]
    [io.pedestal.http :as http]
-   [cheffy.routes :as routes]))
+   [io.pedestal.interceptor :as interceptor]))
 
-(defn- start-server [service-map]
+;; let's define an interceptor that injects our system into the context
+(defn inject-system [system]
+  (interceptor/interceptor
+   {:name ::inject-system
+    :enter (fn [ctx]
+             ;; let's just add our whole system to the :request key
+             (update ctx :request merge system))}))
+
+(defn- start-server [service-map database]
   (println "Starting API server...")
   (-> service-map
       (assoc ::http/routes routes/table-routes)
+      ;; here we add our interceptor to the interceptor chain to include the db component
+      (update ::http/interceptors conj (inject-system {:system/database database}))
       http/create-server
       http/start))
 
@@ -31,7 +42,7 @@
 (defrecord ApiServer [service-map service database]
   component/Lifecycle
   (start [this]
-    (assoc this :service (start-server service-map)))
+    (assoc this :service (start-server service-map database)))
   (stop [this]
     (when service (stop-server service))
     ;; why don't do `(dissoc this :service)`?
