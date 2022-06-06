@@ -5,6 +5,9 @@
    [io.pedestal.http :as http]
    [io.pedestal.interceptor :as interceptor]))
 
+(defn dev? [{:keys [env] :as _service-map}]
+  (= :dev env))
+
 ;; let's define an interceptor that injects our system into the context
 (defn inject-system [system]
   (interceptor/interceptor
@@ -14,16 +17,22 @@
              (update ctx :request merge system))}))
 
 (defn cheffy-interceptors
+  "Injects interceptors into the service properly so they are put
+  just before the last one in the default set of interceptors.
+  The last one should always be the router.
+  Adds `http/dev-interceptors` if we are running in the dev env."
   [service-map interceptors]
   (let [default-interceptors (-> service-map
                                  http/default-interceptors
                                  ::http/interceptors)
-        all-interceptors (concat
-                          (butlast default-interceptors)
-                          interceptors
-                          ;; the last interceptor should be `:io.pedestal.http.route/router`
-                          [(last default-interceptors)])]
-    (assoc service-map ::http/interceptors all-interceptors)))
+        all-interceptors (vec
+                          (concat
+                           (butlast default-interceptors)
+                           interceptors
+                           ;; the last interceptor should be `:io.pedestal.http.route/router`
+                           [(last default-interceptors)]))]
+    (cond-> (assoc service-map  ::http/interceptors all-interceptors)
+        (dev? service-map) (http/dev-interceptors))))
 
 (defn- start-server [service-map database]
   (println "Starting API server...")
