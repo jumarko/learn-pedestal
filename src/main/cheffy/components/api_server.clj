@@ -13,12 +13,24 @@
              ;; let's just add our whole system to the :request key
              (update ctx :request merge system))}))
 
+(defn cheffy-interceptors
+  [service-map interceptors]
+  (let [default-interceptors (-> service-map
+                                 http/default-interceptors
+                                 ::http/interceptors)
+        all-interceptors (concat
+                          (butlast default-interceptors)
+                          interceptors
+                          ;; the last interceptor should be `:io.pedestal.http.route/router`
+                          [(last default-interceptors)])]
+    (assoc service-map ::http/interceptors all-interceptors)))
+
 (defn- start-server [service-map database]
   (println "Starting API server...")
   (-> service-map
       (assoc ::http/routes routes/table-routes)
       ;; here we add our interceptor to the interceptor chain to include the db component
-      (update ::http/interceptors conj (inject-system {:system/database database}))
+      (cheffy-interceptors [(inject-system {:system/database database})])
       http/create-server
       http/start))
 
