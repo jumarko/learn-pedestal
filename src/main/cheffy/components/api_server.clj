@@ -1,6 +1,7 @@
 (ns cheffy.components.api-server
   (:require
    [cheffy.routes :as routes]
+   [cheffy.interceptors :as interceptors]
    [com.stuartsierra.component :as component]
    [io.pedestal.http :as http]
    [io.pedestal.interceptor :as interceptor]))
@@ -39,7 +40,8 @@
   (-> service-map
       (assoc ::http/routes routes/table-routes)
       ;; here we add our interceptor to the interceptor chain to include the db component
-      (cheffy-interceptors [(inject-system {:system/database database})])
+      (cheffy-interceptors [(inject-system {:system/database database})
+                            interceptors/db-interceptor])
       http/create-server
       http/start))
 
