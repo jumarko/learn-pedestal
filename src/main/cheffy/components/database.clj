@@ -4,7 +4,25 @@
   (:require [com.stuartsierra.component :as component]
             [datomic.client.api :as d]
             ;; this is closed-source
-            [datomic.dev-local :as dl]))
+            [datomic.dev-local :as dl]
+            [clojure.java.io :as io]
+            [clojure.edn :as edn]))
+
+
+(defn ident-has-attr? [db ident attr]
+  ;; check if accounts exist already
+  (contains? (d/pull db {:eid ident :selector '[*]})
+             attr))
+
+(defn- load-data [resource-path]
+  (-> (io/resource resource-path) slurp edn/read-string))
+
+(defn load-dataset [conn]
+  (let [db (d/db conn)
+        tx #(d/transact conn {:tx-data %})]
+    (when-not (ident-has-attr? db :account/account-id :db/ident)
+      (tx (load-data "schema.edn"))
+      (tx (load-data "seed.edn")))))
 
 
 (defn- start-db [db-config]
@@ -13,6 +31,7 @@
         client (d/client (select-keys db-config [:server-type :storage-dir :system]))
         _ (d/create-database client db-name)
         conn (d/connect client db-name)]
+    (load-dataset conn)
     conn))
 
 (defn- stop-db [db-config]
@@ -29,4 +48,5 @@
 
 (defn make-db [db-config]
   (map->Database {:config db-config}))
+
 
