@@ -3,6 +3,7 @@
 
 ;; add some more routes
 (defn list-recipes [request]
+  (prn "DEBUG:: [request] " [request])
   {:status 200
    :body "list recipes"})
 

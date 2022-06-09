@@ -9,8 +9,9 @@
             [clojure.edn :as edn]))
 
 
-(defn ident-has-attr? [db ident attr]
-  ;; check if accounts exist already
+(defn ident-has-attr?
+  "Checks whether there's a db entity with with given id and attribute."
+  [db ident attr]
   (contains? (d/pull db {:eid ident :selector '[*]})
              attr))
 
