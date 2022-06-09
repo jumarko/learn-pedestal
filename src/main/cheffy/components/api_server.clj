@@ -66,8 +66,7 @@
   component/Lifecycle
   (start [this]
     (assoc this :service (start-server service-map database)))
-  (stop [this]
-    (when service (stop-server service))
+  (stop [this] (when service (stop-server service))
     ;; why don't do `(dissoc this :service)`?
     ;; => you would end up with a plain map, not the ApiServer record anymore!
     (assoc this :service nil)))
