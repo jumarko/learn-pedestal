@@ -84,13 +84,11 @@
                                  :recipe/recipe-id (random-uuid)
                                  :recipe/display-name "Dummy recipe for quick testing"
                                  }]}))
-
   .)
 
 
 ;;; inspect interceptor chain for specific route via `io.pedestal.test/response-for`
 (comment
-  (restart-dev)
 
   ;; check the docstring
   pt/response-for
@@ -123,6 +121,22 @@
   ;;      "Content-Security-Policy"
   ;;      "object-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:;",
   ;;      "Content-Type" "text/plain"}}
+
+  .)
+
+;; after lesson 22 - pass account-id in Authorization header
+(comment
+
+  (restart-dev)
+
+  (-> (pt/response-for
+       (-> cr/system :api-server :service ::http/service-fn)
+       :get "/recipes"
+       ;; account-id is taken from seed.edn
+       :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+      :body
+      )
+
 
   .)
 
