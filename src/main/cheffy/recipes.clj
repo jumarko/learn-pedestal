@@ -5,20 +5,21 @@
    [cheshire.core :as json]
    [ring.util.response :refer [response]]))
 
-(defn list-recipes-response [{:keys [system/database] :as request}]
-  #_(prn "DEBUG:: [request] " [request])
+(defn- query-result->recipe [[q-result]]
+  (-> q-result
+      (assoc :favorite-count (count (:account/_favorite_recipes q-result)))
+      ;; now dissoc the key that we do not want to expose
+      (dissoc :account/_favorite-recipes)))
 
-  (let [db (:db database)
-        ;; For now, a really stupid authentication mechanism will work - just pass account id in the Authorization header
-        ;; - see response-for call in dev.clj
-        account-id (get-in request [:headers "authorization"])
-        ;; see shownotes for the episode: https://www.jacekschae.com/view/courses/learn-pedestal-pro/1366483-recipes/4269943-22-list-recipes
+(defn- query-recipes [db account-id]
+  (let [;; see shownotes for the episode: https://www.jacekschae.com/view/courses/learn-pedestal-pro/1366483-recipes/4269943-22-list-recipes
         ;; the output of our query will comply to this pattern
         recipe-pattern [:recipe/recipe-id
                         :recipe/prep-time
                         :recipe/display-name
                         :recipe/image-url
                         :recipe/public?
+                        ;; Notice the reverse lookup with underscore: https://docs.datomic.com/cloud/query/query-pull.html#reverse-lookup
                         :account/_favorite-recipes
                         {:recipe/owner
                          [:account/account-id
@@ -39,16 +40,25 @@
                               :in $ pattern
                               :where [?e :recipe/public? true]]
                             db recipe-pattern)]
-    (cond-> {:public public-recipes}
+    (cond-> {:public (mapv query-result->recipe public-recipes)}
       account-id (merge
-                  {:drafts (d/q '[:find (pull ?e pattern)
-                                  :in $ ?account-id pattern
-                                  :where
-                                  [?owner :account/account-id ?account-id]
-                                  [?e :recipe/owner ?owner]
-                                  [?e :recipe/public? false]]
-                                db account-id recipe-pattern)})
-      true (-> json/generate-string response))))
+                  {:drafts (mapv query-result->recipe
+                                 (d/q '[:find (pull ?e pattern)
+                                        :in $ ?account-id pattern
+                                        :where
+                                        [?owner :account/account-id ?account-id]
+                                        [?e :recipe/owner ?owner]
+                                        [?e :recipe/public? false]]
+                                      db account-id recipe-pattern))}))))
+
+(defn list-recipes-response [{:keys [system/database] :as request}]
+  #_(prn "DEBUG:: [request] " [request])
+  (let [db (:db database)
+        ;; For now, a really stupid authentication mechanism will work - just pass account id in the Authorization header
+        ;; - see response-for call in dev.clj
+        account-id (get-in request [:headers "authorization"])
+        recipes (query-recipes db account-id)]
+    (-> recipes json/generate-string response)))
 
 
 ;; TODO juraj: is this really needed?
