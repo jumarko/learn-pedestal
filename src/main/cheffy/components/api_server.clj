@@ -41,7 +41,9 @@
       (assoc ::http/routes routes/table-routes)
       ;; here we add our interceptor to the interceptor chain to include the db component
       (cheffy-interceptors [(inject-system {:system/database database})
-                            interceptors/db-interceptor])
+                            interceptors/db-interceptor
+                            ;; convert response to transit format
+                            http/transit-body])
       http/create-server
       http/start))
 

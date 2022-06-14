@@ -134,7 +134,7 @@
        :get "/recipes"
        ;; account-id is taken from seed.edn
        :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
-      :body
+      :headers
       )
 
 

@@ -3,7 +3,8 @@
    [datomic.client.api :as d]
    [cheffy.interceptors :as interceptors]
    [cheshire.core :as json]
-   [ring.util.response :refer [response]]))
+   [ring.util.response :refer [response]]
+   [io.pedestal.http :as http]))
 
 (defn- query-result->recipe [[q-result]]
   (-> q-result
@@ -63,7 +64,9 @@
 
 ;; TODO juraj: is this really needed?
 ;; the interceptor seems to work just fine if I keep it in api-server
-(def list-recipes [interceptors/db-interceptor #'list-recipes-response])
+(def list-recipes [interceptors/db-interceptor
+                   http/transit-body
+                   #'list-recipes-response])
 
 (defn upsert-recipe-response [request]
   {:status 200
