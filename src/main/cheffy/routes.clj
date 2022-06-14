@@ -12,9 +12,9 @@
    ;;      http://localhost:3001/recipes
    #{{:app-name :cheffy ::http/scheme :http ::http/host "localhost"}
      ;; now define the routes themselves
-     ["/recipes" :get recipes/list-recipes-response :route-name :list-recipes]
-     ["/recipes" :post recipes/upsert-recipe-response :route-name :create-recipe]
-     ["/recipes/:recipe-id" :put recipes/update-recipe-response :route-name :update-recipe]}))
+     ["/recipes" :get #'recipes/list-recipes-response :route-name :list-recipes]
+     ["/recipes" :post #'recipes/upsert-recipe-response :route-name :create-recipe]
+     ["/recipes/:recipe-id" :put #'recipes/update-recipe-response :route-name :update-recipe]}))
 ;; inspect `table-routes` again and notice `:path-params`:
 ;;     :path-params [:recipe-id]
 
