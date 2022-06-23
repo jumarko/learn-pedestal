@@ -187,9 +187,23 @@
                                        :img "https://github.com/clojure.png"})))
             [:headers "Location"]))
 
+  ;; first attempt, just returning a dummy response
   (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
                    :get recipe-url
                    :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
 ;; => {:status 200, :body "7e485d7a-23c1-4519-8043-15dbb38775b7", :headers {"Strict-Transport-Security" "max-age=31536000; includeSubdomains", "X-Frame-Options" "DENY", "X-Content-Type-Options" "nosniff", "X-XSS-Protection" "1; mode=block", "X-Download-Options" "noopen", "X-Permitted-Cross-Domain-Policies" "none", "Content-Security-Policy" "object-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:;", "Content-Type" "text/plain"}}
+
+  ;; proper implementation
+  (-> (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
+                    :get recipe-url
+                    :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+      :body
+      transit-read)
+  ;; => [[#:recipe{:recipe-id #uuid "18f4d0d5-89f9-483c-a926-08ce02eb1453",
+  ;;               :prep-time 30,
+  ;;               :display-name "my transit recipe",
+  ;;               :image-url "https://github.com/clojure.png",
+  ;;               :public? true,
+  ;;               :owner #:account{:account-id "auth|5fbf7db6271d5e0076903601", :display-name "Auth"}}]]
 
   .)

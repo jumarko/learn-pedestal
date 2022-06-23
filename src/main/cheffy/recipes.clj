@@ -6,6 +6,29 @@
    [ring.util.response :as response]
    [io.pedestal.http :as http]))
 
+;; see shownotes for the episode: https://www.jacekschae.com/view/courses/learn-pedestal-pro/1366483-recipes/4269943-22-list-recipes
+;; the output of our query will comply to this pattern
+(def recipe-pattern [:recipe/recipe-id
+                     :recipe/prep-time
+                     :recipe/display-name
+                     :recipe/image-url
+                     :recipe/public?
+                     ;; Notice the reverse lookup with underscore: https://docs.datomic.com/cloud/query/query-pull.html#reverse-lookup
+                     :account/_favorite-recipes
+                     {:recipe/owner
+                      [:account/account-id
+                       :account/display-name]}
+                     {:recipe/steps
+                      [:step/step-id
+                       :step/description
+                       :step/sort-order]}
+                     {:recipe/ingredients
+                      [:ingredient/ingredient-id
+                       :ingredient/display-name
+                       :ingredient/amount
+                       :ingredient/measure
+                       :ingredient/sort-order]}])
+
 (defn- query-result->recipe [[q-result]]
   (-> q-result
       (assoc :favorite-count (count (:account/_favorite_recipes q-result)))
@@ -13,29 +36,7 @@
       (dissoc :account/_favorite-recipes)))
 
 (defn- query-recipes [db account-id]
-  (let [;; see shownotes for the episode: https://www.jacekschae.com/view/courses/learn-pedestal-pro/1366483-recipes/4269943-22-list-recipes
-        ;; the output of our query will comply to this pattern
-        recipe-pattern [:recipe/recipe-id
-                        :recipe/prep-time
-                        :recipe/display-name
-                        :recipe/image-url
-                        :recipe/public?
-                        ;; Notice the reverse lookup with underscore: https://docs.datomic.com/cloud/query/query-pull.html#reverse-lookup
-                        :account/_favorite-recipes
-                        {:recipe/owner
-                         [:account/account-id
-                          :account/display-name]}
-                        {:recipe/steps
-                         [:step/step-id
-                          :step/description
-                          :step/sort-order]}
-                        {:recipe/ingredients
-                         [:ingredient/ingredient-id
-                          :ingredient/display-name
-                          :ingredient/amount
-                          :ingredient/measure
-                          :ingredient/sort-order]}]
-        ;; notice that `pull` is a required symbol/function;
+  (let [;; notice that `pull` is a required symbol/function;
         ;; instead is a special syntax recognized by datomic
         public-recipes (d/q '[:find (pull ?e pattern)
                               :in $ pattern
@@ -83,13 +84,19 @@
         recipe-id (create-recipe! (:conn database) account-id transit-params)]
     (response/created (str "/recipes/" recipe-id))))
 
+(defn- retrieve-recipe [db recipe-id]
+  (let [recipe (d/q '[:find (pull ?e pattern)
+                      :in $ ?recipe-id pattern
+                      :where [?e :recipe/recipe-id ?recipe-id]]
+                    db recipe-id recipe-pattern)]
+    recipe))
 
 (defn retrieve-recipe-response
   ;; Notice `path-params`
-  [{:keys [path-params system/database] :as request}]
+  [{:keys [path-params system/database] :as _request}]
   (let [db (:db database)
         recipe-id (parse-uuid (:recipe-id path-params))]
-    (response/response (str recipe-id))))
+    (response/response (retrieve-recipe db recipe-id))))
 
 ;; TODO juraj: NOT USED - is this really needed?
 ;; the interceptor seems to work just fine if I keep it in api-server
