@@ -3,7 +3,7 @@
    [datomic.client.api :as d]
    [cheffy.interceptors :as interceptors]
    [cheshire.core :as json]
-   [ring.util.response :refer [response]]
+   [ring.util.response :as response]
    [io.pedestal.http :as http]))
 
 (defn- query-result->recipe [[q-result]]
@@ -59,11 +59,34 @@
         ;; - see response-for call in dev.clj
         account-id (get-in request [:headers "authorization"])
         recipes (query-recipes db account-id)]
-    (-> recipes json/generate-string response)))
+    (-> recipes json/generate-string response/response)))
+
+(defn create-recipe! [conn account-id
+                      {:keys [name public prep-time img] :as _params}]
+  ;; TODO: change UUID later to something better indexed by Datomic
+  (let [recipe-id (random-uuid)]
+    (d/transact conn {:tx-data [{:recipe/recipe-id recipe-id
+                                 :recipe/display-name name ; shadowing core function
+                                 :recipe/public? public
+                                 :recipe/prep-time prep-time
+                                 :recipe/image-url img
+                                 ;; owner is actually a ref
+                                 :recipe/owner [:account/account-id account-id]}]})
+    recipe-id))
 
 
-;; TODO juraj: is this really needed?
+(defn create-recipe-response
+  ;; TODO: why do we use `transit-params` and not just `params`
+  ;; - this makes the code transport specific
+  [{:keys [headers transit-params :system/database]}]
+  (let [account-id (get headers "authorization")
+        recipe-id (create-recipe! (:conn database) account-id transit-params)]
+    (response/created (str "/recipes/" recipe-id))))
+
+
+;; TODO juraj: NOT USED - is this really needed?
 ;; the interceptor seems to work just fine if I keep it in api-server
+;; similar for `create-recipe`
 (def list-recipes [interceptors/db-interceptor
                    http/transit-body
                    #'list-recipes-response])

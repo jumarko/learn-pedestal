@@ -4,6 +4,7 @@
    [cheffy.interceptors :as interceptors]
    [com.stuartsierra.component :as component]
    [io.pedestal.http :as http]
+   [io.pedestal.http.body-params :as bp]
    [io.pedestal.interceptor :as interceptor]))
 
 (defn dev? [{:keys [env] :as _service-map}]
@@ -42,6 +43,7 @@
       ;; here we add our interceptor to the interceptor chain to include the db component
       (cheffy-interceptors [(inject-system {:system/database database})
                             interceptors/db-interceptor
+                            (bp/body-params)
                             ;; convert response to transit format
                             http/transit-body])
       http/create-server
