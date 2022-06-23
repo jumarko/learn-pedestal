@@ -14,6 +14,7 @@
      ;; now define the routes themselves
      ["/recipes" :get #'recipes/list-recipes-response :route-name :list-recipes]
      ["/recipes" :post #'recipes/create-recipe-response :route-name :create-recipe]
+     ["/recipes/:recipe-id" :get #'recipes/retrieve-recipe-response :route-name :get-recipes]
      ["/recipes/:recipe-id" :put #'recipes/update-recipe-response :route-name :update-recipe]}))
 ;; inspect `table-routes` again and notice `:path-params`:
 ;;     :path-params [:recipe-id]

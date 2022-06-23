@@ -84,6 +84,13 @@
     (response/created (str "/recipes/" recipe-id))))
 
 
+(defn retrieve-recipe-response
+  ;; Notice `path-params`
+  [{:keys [path-params system/database] :as request}]
+  (let [db (:db database)
+        recipe-id (parse-uuid (:recipe-id path-params))]
+    (response/response (str recipe-id))))
+
 ;; TODO juraj: NOT USED - is this really needed?
 ;; the interceptor seems to work just fine if I keep it in api-server
 ;; similar for `create-recipe`

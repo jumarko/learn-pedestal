@@ -170,3 +170,26 @@
   ;;      "object-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:;"}}
   .)
 
+
+;; 26: retrieve recipe
+(comment
+  (restart-dev)
+
+  (def recipe-url
+    (get-in (-> (pt/response-for
+                 (-> cr/system :api-server :service ::http/service-fn)
+                 :post "/recipes"
+                 :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"
+                           "Content-Type" "application/transit+json"}
+                 :body (transit-write {:name "my transit recipe"
+                                       :public true
+                                       :prep-time 30
+                                       :img "https://github.com/clojure.png"})))
+            [:headers "Location"]))
+
+  (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
+                   :get recipe-url
+                   :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+;; => {:status 200, :body "7e485d7a-23c1-4519-8043-15dbb38775b7", :headers {"Strict-Transport-Security" "max-age=31536000; includeSubdomains", "X-Frame-Options" "DENY", "X-Content-Type-Options" "nosniff", "X-XSS-Protection" "1; mode=block", "X-Download-Options" "noopen", "X-Permitted-Cross-Domain-Policies" "none", "Content-Security-Policy" "object-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:;", "Content-Type" "text/plain"}}
+
+  .)
