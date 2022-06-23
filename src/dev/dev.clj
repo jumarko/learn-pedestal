@@ -1,7 +1,8 @@
 (ns dev
   (:require
-   [clojure.edn :as end]
    [cheffy.server :as server]
+   [cheffy.util.transit :refer [transit-read transit-write]]
+   [clojure.edn :as end]
    [com.stuartsierra.component.repl :as cr]
    [datomic.client.api :as d]
    [io.pedestal.http :as http]
@@ -138,5 +139,34 @@
       )
 
 
+  .)
+
+;; Lesson 25: create recipe
+
+(comment
+  (restart-dev)
+
+  (-> (pt/response-for
+       (-> cr/system :api-server :service ::http/service-fn)
+       :post "/recipes"
+         ;; account-id is taken from seed.edn
+       :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"
+                 "Content-Type" "application/transit+json"}
+       :body (transit-write {:name "my transit recipe"
+                             :public true
+                             :prep-time 30
+                             :img "https://github.com/clojure.png"})))
+  ;; => {:status 201,
+  ;;     :body "",
+  ;;     :headers
+  ;;     {"X-Frame-Options" "DENY",
+  ;;      "X-XSS-Protection" "1; mode=block",
+  ;;      "X-Download-Options" "noopen",
+  ;;      "Location" "/recipes/cd716f87-c59c-4e63-b875-d06d654ce06c",
+  ;;      "Strict-Transport-Security" "max-age=31536000; includeSubdomains",
+  ;;      "X-Permitted-Cross-Domain-Policies" "none",
+  ;;      "X-Content-Type-Options" "nosniff",
+  ;;      "Content-Security-Policy"
+  ;;      "object-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:;"}}
   .)
 
