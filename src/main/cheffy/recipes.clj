@@ -62,7 +62,7 @@
         recipes (query-recipes db account-id)]
     (-> recipes json/generate-string response/response)))
 
-(defn create-recipe! [conn
+(defn- create-recipe! [conn
                       account-id
                       {:keys [name public prep-time img] :as _params}]
   ;; TODO: change UUID later to something better indexed by Datomic
@@ -106,7 +106,7 @@
                    http/transit-body
                    #'list-recipes-response])
 
-(defn update-recipe! [conn
+(defn- update-recipe! [conn
                       account-id
                       recipe-id
                       {:keys [name public prep-time img] :as _params}]
@@ -124,6 +124,17 @@
         account-id (get headers "authorization")
         recipe-id (parse-uuid (:recipe-id path-params))]
     (update-recipe! db account-id recipe-id transit-params)
+    {:status 204}))
+
+(defn delete-recipe! [conn recipe-id]
+  (d/transact conn {:tx-data [[:db/retractEntity [:recipe/recipe-id recipe-id]]]}))
+
+(defn delete-recipe-response
+  [{:keys [path-params system/database] :as _request}]
+  (let [db (:conn database)
+        ;; notice we don't do any authorization
+        recipe-id (parse-uuid (:recipe-id path-params))]
+    (delete-recipe! db recipe-id)
     {:status 204}))
 
 ;; TODO: refactor update-recipe and create-recipe to use common code

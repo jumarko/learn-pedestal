@@ -263,3 +263,45 @@
   ;;               :public? true,
   ;;               :owner #:account{:account-id "auth|5fbf7db6271d5e0076903601", :display-name "Auth"}}]]
   .)
+
+
+;; 28: delete recipe
+(comment
+  (restart-dev)
+
+  ;; create new recipe
+  (def recipe-url
+    (get-in (-> (pt/response-for
+                 (-> cr/system :api-server :service ::http/service-fn)
+                 :post "/recipes"
+                 :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"
+                           "Content-Type" "application/transit+json"}
+                 :body (transit-write {:name "my transit recipe"
+                                       :public true
+                                       :prep-time 30
+                                       :img "https://github.com/clojure.png"})))
+            [:headers "Location"]))
+
+  (-> (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
+                       :get recipe-url
+                       :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+      :body transit-read ffirst :recipe/recipe-id)
+;; => #uuid "044630f1-26a3-4c00-8d0e-8c641cd9b96a"
+
+  ;; delete it
+  (-> (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
+                       :delete recipe-url
+                       :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+      :body)
+;; => ""
+
+  ;; now try to get it again
+  (-> (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
+                       :get recipe-url
+                       :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+      :body
+      transit-read)
+  ;; Note: this should perhaps return 404 NOT FOUND?
+;; => []
+
+  .)
