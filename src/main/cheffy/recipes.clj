@@ -62,7 +62,8 @@
         recipes (query-recipes db account-id)]
     (-> recipes json/generate-string response/response)))
 
-(defn create-recipe! [conn account-id
+(defn create-recipe! [conn
+                      account-id
                       {:keys [name public prep-time img] :as _params}]
   ;; TODO: change UUID later to something better indexed by Datomic
   (let [recipe-id (random-uuid)]
@@ -79,16 +80,16 @@
 (defn create-recipe-response
   ;; TODO: why do we use `transit-params` and not just `params`
   ;; - this makes the code transport specific
-  [{:keys [headers transit-params :system/database]}]
+  [{:keys [headers transit-params system/database]}]
   (let [account-id (get headers "authorization")
         recipe-id (create-recipe! (:conn database) account-id transit-params)]
     (response/created (str "/recipes/" recipe-id))))
 
 (defn- retrieve-recipe [db recipe-id]
   (let [recipe (d/q '[:find (pull ?e pattern)
-                      :in $ ?recipe-id pattern
-                      :where [?e :recipe/recipe-id ?recipe-id]]
-                    db recipe-id recipe-pattern)]
+                              :in $ ?recipe-id pattern
+                              :where [?e :recipe/recipe-id ?recipe-id]]
+                            db recipe-id recipe-pattern)]
     recipe))
 
 (defn retrieve-recipe-response
@@ -105,11 +106,29 @@
                    http/transit-body
                    #'list-recipes-response])
 
+(defn update-recipe! [conn
+                      account-id
+                      recipe-id
+                      {:keys [name public prep-time img] :as _params}]
+  (d/transact conn {:tx-data [{:recipe/recipe-id recipe-id
+                               :recipe/display-name name ; shadowing core function
+                               :recipe/public? public
+                               :recipe/prep-time prep-time
+                               :recipe/image-url img
+                               ;; owner is actually a ref
+                               :recipe/owner [:account/account-id account-id]}]}))
+
+(defn update-recipe-response
+  [{:keys [headers path-params transit-params system/database] :as _request}]
+  (let [db (:conn database)
+        account-id (get headers "authorization")
+        recipe-id (parse-uuid (:recipe-id path-params))]
+    (update-recipe! db account-id recipe-id transit-params)
+    {:status 204}))
+
+;; TODO: refactor update-recipe and create-recipe to use common code
 (defn upsert-recipe-response [request]
   {:status 200
    :body "upsert recipe"})
 
-(defn update-recipe-response [request]
-  {:status 200
-   :body "update recipe"})
 

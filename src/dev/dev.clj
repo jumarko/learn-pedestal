@@ -207,3 +207,59 @@
   ;;               :owner #:account{:account-id "auth|5fbf7db6271d5e0076903601", :display-name "Auth"}}]]
 
   .)
+
+
+;; 27: update recipe
+(comment
+  (restart-dev)
+
+  ;; create new recipe
+  (def recipe-url
+    (get-in (-> (pt/response-for
+                 (-> cr/system :api-server :service ::http/service-fn)
+                 :post "/recipes"
+                 :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"
+                           "Content-Type" "application/transit+json"}
+                 :body (transit-write {:name "my transit recipe"
+                                       :public true
+                                       :prep-time 30
+                                       :img "https://github.com/clojure.png"})))
+            [:headers "Location"]))
+
+  (-> (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
+                       :get recipe-url
+                       :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+      :body
+      transit-read)
+  ;; => [[#:recipe{:recipe-id #uuid "e86fe7c2-1227-42f3-9ea4-18ebf7a3d86d",
+  ;;               :prep-time 30,
+  ;;               :display-name "my transit recipe",
+  ;;               :image-url "https://github.com/clojure.png",
+  ;;               :public? true,
+  ;;               :owner #:account{:account-id "auth|5fbf7db6271d5e0076903601", :display-name "Auth"}}]]
+
+  ;; update it
+  (pt/response-for
+   (-> cr/system :api-server :service ::http/service-fn)
+   :put recipe-url
+   :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"
+             "Content-Type" "application/transit+json"}
+   :body (transit-write {:name "my UPDATED recipe"
+                         :public true
+                         :prep-time 45
+                         :img "https://github.com/clojure.png"}))
+;; => {:status 204, :body "", :headers {"Strict-Transport-Security" "max-age=31536000; includeSubdomains", "X-Frame-Options" "DENY", "X-Content-Type-Options" "nosniff", "X-XSS-Protection" "1; mode=block", "X-Download-Options" "noopen", "X-Permitted-Cross-Domain-Policies" "none", "Content-Security-Policy" "object-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:;"}}
+
+  ;; now get it to check if it was updated
+  (-> (pt/response-for (-> cr/system :api-server :service ::http/service-fn)
+                       :get recipe-url
+                       :headers {"Authorization"  "auth|5fbf7db6271d5e0076903601"})
+      :body
+      transit-read)
+  ;; => [[#:recipe{:recipe-id #uuid "cb3e63b0-ac88-4be9-9bf5-50a94c6bd47c",
+  ;;               :prep-time 45,
+  ;;               :display-name "my UPDATED recipe",
+  ;;               :image-url "https://github.com/clojure.png",
+  ;;               :public? true,
+  ;;               :owner #:account{:account-id "auth|5fbf7db6271d5e0076903601", :display-name "Auth"}}]]
+  .)
