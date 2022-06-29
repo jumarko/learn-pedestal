@@ -1,11 +1,12 @@
 (ns cheffy.routes
   (:require
    [cheffy.recipes :as recipes]
+   [cheffy.recipes-with-interceptors :as recipes-i]
    [io.pedestal.http.route :as route]
    [io.pedestal.http :as http]))
 
-;; See http://pedestal.io/reference/defining-routes
-(def table-routes
+;; The former routes using `recipes` ns
+#_(def table-routes
   (route/expand-routes
    ;; IMPORTANT: make sure that `:host` matches your hostname, most likely 'localhost'
    ;; - otherwise you will get NOT FOUND in the browser when you try something like
@@ -19,6 +20,20 @@
      ["/recipes/:recipe-id" :delete #'recipes/delete-recipe-response :route-name :delete-recipe]}))
 ;; inspect `table-routes` again and notice `:path-params`:
 ;;     :path-params [:recipe-id]
+
+;; updated routes relying more heavily on interceptors as defined in recipes-with-interceptors ns
+(def table-routes
+  (route/expand-routes
+   ;; IMPORTANT: make sure that `:host` matches your hostname, most likely 'localhost'
+   ;; - otherwise you will get NOT FOUND in the browser when you try something like
+   ;;      http://localhost:3001/recipes
+   #{{:app-name :cheffy ::http/scheme :http ::http/host "localhost"}
+     ;; now define the routes themselves
+     ["/recipes" :get recipes-i/list-recipes-response :route-name :list-recipes]
+     ["/recipes" :post recipes-i/create-recipe :route-name :create-recipe]
+     ["/recipes/:recipe-id" :get recipes-i/retrieve-recipe :route-name :get-recipes]
+     ["/recipes/:recipe-id" :put recipes-i/update-recipe :route-name :update-recipe]
+     ["/recipes/:recipe-id" :delete recipes-i/delete-recipe :route-name :delete-recipe]}))
 
 ;; just as an example, here we show the 'terse' syntax - less verbose than in `table-routes`
 (comment
