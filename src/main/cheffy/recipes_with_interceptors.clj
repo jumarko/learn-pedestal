@@ -108,7 +108,8 @@
 (defn recipe-on-response
   [ctx]
   (assoc ctx :response (if-let [id (:recipe-id ctx)]
-                         (response/created (str "/recipes/" id))
+                         (response/created (str "/recipes/" id)
+                                           {:recipe-id id})
                          {:status 200})))
 
 
