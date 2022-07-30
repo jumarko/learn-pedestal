@@ -35,11 +35,12 @@
 (defn- query!
   [{:keys [q-data] :as ctx}]
   (log/debug :q-data q-data :database (database ctx))
-  (when-let [result (and q-data (d/q (doto (update q-data :args #(into [(database ctx)] %))
-                                       prn)))]
-    ;; add the database as the first of `:args`
-    (log/trace :q-result result)
-    (assoc ctx :q-result result)))
+  (let [q-with-db (update q-data :args #(into [(database ctx)] %))]
+    (log/trace :q-data-with-database q-with-db)
+    (when-let [result (and q-data (d/q q-with-db))]
+      ;; add the database as the first of `:args`
+      (log/trace :q-result result)
+      (assoc ctx :q-result result))))
 
 (def transact-interceptor
   (interceptor/interceptor
