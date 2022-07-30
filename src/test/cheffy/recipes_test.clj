@@ -16,6 +16,12 @@
     (is (= expected-status (:status response)))
     response))
 
+;; a bit nasty but does its work - this is set by 'create recipe' test
+;; and used by the subsequent tests
+;; It also has an advantage that you can run a single test such as 'retrieve recipe'
+;; manually without preparing the recipe first
+(def recipe-id-store (atom nil))
+
 (deftest recipes-test
   (testing "list recipes"
     (testing "with auth -- public and drafts"
@@ -30,10 +36,20 @@
   (testing "create recipe"
     (let [{:keys [body]} (ok-response 201 :post "/recipes"
                                       :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"}
+                                      ;; TODO TODO TODO!
                                       ;; TODO: check logs and notice that this doesn't work
                                       ;; - :name, :public, :prep-time and :img are all nil!
                                       :body (transit-write {:name "name"
                                                             :public true
                                                             :prep-time 30
-                                                            :img "https://github.com/clojure.png"}))]
+                                                            :img "https://github.com/clojure.png"}))
+          recipe-id (:recipe-id body)]
+      (is (uuid? recipe-id))
+      (reset! recipe-id-store recipe-id)))
+  ;; TODO: fix this - it fails with EOFException again,
+  ;; maybe because the 'create recipe' step doesn't work properly
+  ;; the db query simply returns an empty result
+  (testing "retrieve recipe"
+    (let [{:keys [body]} (ok-response 200 :get (str "/recipes/" @recipe-id-store)
+                                      :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
       (is (uuid? (:recipe-id body))))))
