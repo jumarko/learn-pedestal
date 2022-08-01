@@ -22,7 +22,7 @@
 ;;     :path-params [:recipe-id]
 
 ;; updated routes relying more heavily on interceptors as defined in recipes-with-interceptors ns
-(def table-routes
+(defn routes []
   (route/expand-routes
    ;; IMPORTANT: make sure that `:host` matches your hostname, most likely 'localhost'
    ;; - otherwise you will get NOT FOUND in the browser when you try something like

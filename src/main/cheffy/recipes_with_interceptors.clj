@@ -75,7 +75,6 @@
         recipes (query-recipes db account-id)]
     (-> recipes json/generate-string response/response)))
 
-;; TODO: list-recipes not transformed to interceptors yet
 (def list-recipes [interceptors/db-interceptor
                    http/transit-body
                    list-recipes-response])
@@ -108,7 +107,8 @@
 (defn recipe-on-response
   [ctx]
   (assoc ctx :response (if-let [id (:recipe-id ctx)]
-                         (response/created (str "/recipes/" id))
+                         (response/created (str "/recipes/" id)
+                                           {:recipe-id id})
                          {:status 200})))
 
 

@@ -36,10 +36,17 @@
     (cond-> (assoc service-map  ::http/interceptors all-interceptors)
         (dev? service-map) (http/dev-interceptors))))
 
+(defn cheffy-routes [service-map]
+  (assoc service-map ::http/routes
+         (if (dev? service-map)
+           ;; notice they used #(routes/routes) instead
+           routes/routes
+           (routes/routes))))
+
 (defn- start-server [service-map database]
   (println "Starting API server...")
   (-> service-map
-      (assoc ::http/routes routes/table-routes)
+      (cheffy-routes)
       ;; here we add our interceptor to the interceptor chain to include the db component
       (cheffy-interceptors [(inject-system {:system/database database})
                             interceptors/db-interceptor
