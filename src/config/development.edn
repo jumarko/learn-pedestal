@@ -4,7 +4,19 @@
                :io.pedestal.http/port 3001
                :io.pedestal.http/join? false}
  ;; see https://docs.datomic.com/cloud/dev-local.html
- :database {:server-type :dev-local
+ ;; for peer server setup with client lib see https://docs.datomic.com/on-prem/client/client-getting-started.html
+ :database {;; :server-type :dev-local
+
+            ;; only needed for Peer server
+            :server-type :peer-server
+            :access-key "myaccesskey"
+            :secret "mysecret"
+            :endpoint "localhost:8998"
+            :validate-hostnames false
+
+            ;; only for Peer library
+            :db-uri "datomic:dev://localhost:4334/learn-pedestal-development"
+
+            :storage-dir :mem ; only needed for dev-local
             :system "dev" ; in the video they used "api.learnpedestal.com"
-            :storage-dir :mem
-            :db-name "development"}}
+            :db-name "learn-pedestal-development"}}

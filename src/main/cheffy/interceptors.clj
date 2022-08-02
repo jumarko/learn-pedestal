@@ -1,7 +1,10 @@
 (ns cheffy.interceptors
-  (:require [datomic.client.api :as d]
-            [io.pedestal.interceptor :as interceptor]
-            [io.pedestal.log :as log]))
+  (:require
+   ;; only for dev-local / client-library
+   #_[datomic.client.api :as d]
+   [datomic.api :as d]
+   [io.pedestal.interceptor :as interceptor]
+   [io.pedestal.log :as log]))
 
 (def conn-path [:request :system/database :conn])
 (def db-path [:request :system/database :db])
@@ -28,7 +31,12 @@
   [{:keys [tx-data] :as ctx}]
   (log/debug :transact tx-data)
   #_(def my-ctx ctx)
-  (when-let [result (some->> tx-data (d/transact (connection ctx)))] 
+  (when-let [result (when tx-data
+                             ;; only for dev-local / Client library
+                             #_(d/transact (connection ctx {:tx-data tx-data}))
+                             ;; only for Peer library - accepts tx-data directly and returns a future
+                             @(d/transact (connection ctx) tx-data)
+                             )]
     (log/trace :tx-result result)
     (assoc ctx :tx-result result)))
 
@@ -37,7 +45,11 @@
   (log/debug :q-data q-data :database (database ctx))
   (let [q-with-db (update q-data :args #(into [(database ctx)] %))]
     (log/trace :q-data-with-database q-with-db)
-    (when-let [result (and q-data (d/q q-with-db))]
+    (when-let [result (and q-data
+                           ;; only for dev-local / client-library - put inside a map under the :query key
+                           #_(d/q q-with-db)
+                           ;; d/q for peer library is different => use d/query : https://docs.datomic.com/on-prem/clojure/index.html#datomic.api/query
+                           (d/query q-with-db))]
       ;; add the database as the first of `:args`
       (log/trace :q-result result)
       (assoc ctx :q-result result))))

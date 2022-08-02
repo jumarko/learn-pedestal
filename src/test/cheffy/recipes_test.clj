@@ -35,10 +35,8 @@
         (is (nil? (get body "drafts"))))))
   (testing "create recipe"
     (let [{:keys [body]} (ok-response 201 :post "/recipes"
-                                      :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"}
-                                      ;; TODO TODO TODO!
-                                      ;; TODO: check logs and notice that this doesn't work
-                                      ;; - :name, :public, :prep-time and :img are all nil!
+                                      :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
+                                                "Content-Type" "application/transit+json"}
                                       :body (transit-write {:name "name"
                                                             :public true
                                                             :prep-time 30
@@ -52,4 +50,6 @@
   (testing "retrieve recipe"
     (let [{:keys [body]} (ok-response 200 :get (str "/recipes/" @recipe-id-store)
                                       :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
-      (is (uuid? (:recipe-id body))))))
+      (is (uuid? (:recipe/recipe-id body))))))
+
+

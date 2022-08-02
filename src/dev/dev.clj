@@ -305,3 +305,27 @@
 ;; => []
 
   .)
+
+
+
+;;; random datomic debugging
+(comment
+  ;; list all entitities ids having specific attribute
+  (let [conn (-> cr/system :database :conn)
+        db (d/db conn)]
+    (d/q '[:find ?e
+           :where [?e :recipe/image-url]]
+         db))
+  ;; => [[74766790688882] [74766790688883] [74766790688884] [74766790688885]]
+
+  ;; find entity by internal id: https://stackoverflow.com/questions/42364172/how-can-i-use-datomics-pull-method-to-grab-an-entity-by-its-entity-id
+  (def my-db (d/db (-> cr/system :database :conn)))
+  (d/pull my-db '[*] 74766790688882)
+;; => {:db/id 74766790688882, :recipe/recipe-id #uuid "a3dde84c-4a33-45aa-b0f3-4bf9ac997680", :recipe/owner #:db{:id 74766790688872}, :recipe/display-name "Splitony's Pizza", :recipe/prep-time 45, :recipe/favorite-count 3, :recipe/image-url "https://res.cloudinary.com/schae/image/upload/f_auto,h_400,q_80/v1548183465/cheffy/recipe/pizza.jpg", :recipe/public? false}
+
+  ;; but for the recipe I created from within the test - the data is empty!
+  (d/pull my-db '[*] 13194139533326)
+;; => #:db{:id 13194139533326, :txInstant #inst "2022-08-01T04:42:12.635-00:00"}
+
+
+  .)
