@@ -16,10 +16,18 @@
         }
 
  :aliases {:dev {:extra-paths ["src/dev"]
-                 :extra-deps {com.datomic/dev-local {:mvn/version "1.0.243"}
+                 :extra-deps {;; com.datomic/dev-local {:mvn/version "1.0.243"}
+                              ;; use Datomic Starter license (1 year)
+                              com.datomic/datomic-pro {:mvn/version "1.0.6397"}
+                              ;; + datomic client library: api: https://docs.datomic.com/on-prem/client/integrating-client-lib.html
+                              com.datomic/client-pro {:mvn/version "1.0.75"}
                               com.stuartsierra/component.repl {:mvn/version "1.0.0"}}}
            :test {:extra-paths ["src/test"]
-                  :extra-deps {com.datomic/dev-local {:mvn/version "1.0.243"}
+                  :extra-deps {;; com.datomic/dev-local {:mvn/version "1.0.243"}
+                               ;; use Datomic Starter license (1 year)
+                               com.datomic/datomic-pro {:mvn/version "1.0.6397"}
+                               ;; + datomic client library: api: https://docs.datomic.com/on-prem/client/integrating-client-lib.html
+                               com.datomic/client-pro {:mvn/version "1.0.75"}
                                com.stuartsierra/component.repl {:mvn/version "1.0.0"}}}}
 
  }

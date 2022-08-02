@@ -8,7 +8,9 @@
   This really hampers debugging because functions' values are captured at the time the interceptors
   are defined and are thus hard to refresh (impossible with cider debugger?)"
   (:require
-   [datomic.client.api :as d]
+   ;; only for dev-local / client-library
+   #_[datomic.client.api :as d]
+   [datomic.api :as d]
    [cheffy.interceptors :as interceptors]
    [cheshire.core :as json]
    [ring.util.response :as response]

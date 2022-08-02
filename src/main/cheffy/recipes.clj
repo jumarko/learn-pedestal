@@ -1,6 +1,8 @@
 (ns cheffy.recipes
   (:require
-   [datomic.client.api :as d]
+   ;; only for dev-local / client-library
+   #_[datomic.client.api :as d]
+   [datomic.api :as d]
    [cheffy.interceptors :as interceptors]
    [cheshire.core :as json]
    [ring.util.response :as response]
