@@ -141,8 +141,8 @@
   [{:keys [q-result] :as ctx}]
   (prn "DEBUG:: find-recipe-on-response " q-result)
   (if (empty? q-result)
-    (response/not-found (str "recipe not found: " (-> ctx :q-data :args first)))
-    (response/response (query-result->recipe (first q-result)))))
+    (assoc ctx :response (response/not-found (str "recipe not found: " (-> ctx :q-data :args first))))
+    (assoc ctx :response (response/response (query-result->recipe (first q-result))))))
 
 (def find-recipe-interceptor (around ::find-recipe find-recipe-on-request find-recipe-on-response))
 
