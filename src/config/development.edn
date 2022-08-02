@@ -7,13 +7,15 @@
  ;; for peer server setup with client lib see https://docs.datomic.com/on-prem/client/client-getting-started.html
  :database {;; :server-type :dev-local
 
-            ;; only needed for peer server
-            :server-type :peer-server ; only for Peer server
-            :access-key "myaccesskey" ; only for Peer server
-            :secret "mysecret" ; only for Peer server
-            :endpoint "localhost:8998" ; only for Peer server
-            :validate-hostnames false ; only for Peer server
-            :db-uri "datomic:dev://localhost:4334/learn-pedestal-development" ; only for Peer library
+            ;; only needed for Peer server
+            :server-type :peer-server
+            :access-key "myaccesskey"
+            :secret "mysecret"
+            :endpoint "localhost:8998"
+            :validate-hostnames false
+
+            ;; only for Peer library
+            :db-uri "datomic:dev://localhost:4334/learn-pedestal-development"
 
             :storage-dir :mem ; only needed for dev-local
             :system "dev" ; in the video they used "api.learnpedestal.com"
