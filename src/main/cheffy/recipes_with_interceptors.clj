@@ -155,12 +155,11 @@
 (defn retract-recipe-on-request
   [ctx]
   (let [recipe-id (parse-uuid (get-in ctx [:request :path-params :recipe-id]))]
-    (assoc ctx :tx-data [[:db/retractEntity [:recipe/recipe-id recipe-id]]])
-    recipe-id))
+    (assoc ctx :tx-data [[:db/retractEntity [:recipe/recipe-id recipe-id]]])))
 
 (defn retract-recipe-on-response
   [ctx]
-  (assoc ctx :response {:status 204}))
+  (assoc ctx :response (response/status 204)))
 
 (def retract-recipe-interceptor
   #_(around retract-recipe-on-request retract-recipe-on-response)
