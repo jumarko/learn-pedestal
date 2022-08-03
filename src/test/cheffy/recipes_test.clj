@@ -8,13 +8,19 @@
 
 (defn- ok-response
   [expected-status method path & options]
-  (let [response (-> (apply pt/response-for
-                            (-> cr/system :api-server :service ::http/service-fn)
-                            method path
-                            options)
-                     (update :body transit-read))]
+  (let [response (apply pt/response-for
+                        (-> cr/system :api-server :service ::http/service-fn)
+                        method
+                        path
+                        options)]
     (is (= expected-status (:status response)))
     response))
+
+(defn- ok-response-body
+  ;; for destructuring, see https://clojure.org/guides/destructuring#_keyword_arguments
+  [expected-status method path & options]
+  (let [response (apply ok-response expected-status method path options)]
+    (update response :body transit-read)))
 
 ;; a bit nasty but does its work - this is set by 'create recipe' test
 ;; and used by the subsequent tests
@@ -25,31 +31,46 @@
 (deftest recipes-test
   (testing "list recipes"
     (testing "with auth -- public and drafts"
-      (let [{:keys [body]} (ok-response 200 :get "/recipes"
-                                        :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
+      (let [{:keys [body]} (ok-response-body
+                            200 :get "/recipes"
+                            :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
         (is (vector? (get body "public")))
         (is (vector? (get body "drafts")))))
     (testing "without auth -- only public "
-      (let [{:keys [body]} (ok-response 200 :get "/recipes")]
+      (let [{:keys [body]} (ok-response-body 200 :get "/recipes")]
         (is (vector? (get body "public")))
         (is (nil? (get body "drafts"))))))
   (testing "create recipe"
-    (let [{:keys [body]} (ok-response 201 :post "/recipes"
-                                      :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
-                                                "Content-Type" "application/transit+json"}
-                                      :body (transit-write {:name "name"
-                                                            :public true
-                                                            :prep-time 30
-                                                            :img "https://github.com/clojure.png"}))
+    (let [{:keys [body]} (ok-response-body
+                          201 :post "/recipes"
+                          :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
+                                    "Content-Type" "application/transit+json"}
+                          :body (transit-write {:name "name"
+                                                :public true
+                                                :prep-time 30
+                                                :img "https://github.com/clojure.png"}))
           recipe-id (:recipe-id body)]
       (is (uuid? recipe-id))
       (reset! recipe-id-store recipe-id)))
-  ;; TODO: fix this - it fails with EOFException again,
-  ;; maybe because the 'create recipe' step doesn't work properly
-  ;; the db query simply returns an empty result
   (testing "retrieve recipe"
-    (let [{:keys [body]} (ok-response 200 :get (str "/recipes/" @recipe-id-store)
-                                      :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
-      (is (uuid? (:recipe/recipe-id body))))))
+    (let [{:keys [body]} (ok-response-body
+                          200 :get (str "/recipes/" @recipe-id-store)
+                          :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
+      (is (uuid? (:recipe/recipe-id body)))))
+  (testing "update recipe"
+    (ok-response 200 :put (str "/recipes/" @recipe-id-store)
+                 :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
+                           "Content-Type" "application/transit+json"}
+                 :body (transit-write {:name "updated name"
+                                       :public true
+                                       :prep-time 30
+                                       :img "https://github.com/clojure.png"}))
+    ;; get again and check that the name was updated
+    (is (= "updated name"
+           (-> (ok-response-body
+                200 :get (str "/recipes/" @recipe-id-store)
+                :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})
+               :body
+               :recipe/display-name)))))
 
 
