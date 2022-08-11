@@ -19,7 +19,7 @@
 
  ; steps
  {:db/id "step_1"
-  :step/step-id #uuid"867ed4bf-4628-48f4-944d-e6b7786bfa92"
+  :step/step-id #uuid "867ed4bf-4628-48f4-944d-e6b7786bfa92"
   :step/description "First step"
   :step/sort-order 1}
 

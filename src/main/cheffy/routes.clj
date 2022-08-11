@@ -2,6 +2,7 @@
   (:require
    [cheffy.recipes :as recipes]
    [cheffy.recipes-with-interceptors :as recipes-i]
+   [cheffy.steps :as steps]
    [io.pedestal.http.route :as route]
    [io.pedestal.http :as http]))
 
@@ -33,7 +34,10 @@
      ["/recipes" :post recipes-i/create-recipe :route-name :create-recipe]
      ["/recipes/:recipe-id" :get recipes-i/retrieve-recipe :route-name :get-recipes]
      ["/recipes/:recipe-id" :put recipes-i/update-recipe :route-name :update-recipe]
-     ["/recipes/:recipe-id" :delete recipes-i/delete-recipe :route-name :delete-recipe]}))
+     ["/recipes/:recipe-id" :delete recipes-i/delete-recipe :route-name :delete-recipe]
+
+     ;; Note: in the previous courses, steps routes were deeply nested under the /recipes/:recipe-id routes
+     ["/steps" :post steps/create-step :route-name :create-step]}))
 
 ;; just as an example, here we show the 'terse' syntax - less verbose than in `table-routes`
 (comment

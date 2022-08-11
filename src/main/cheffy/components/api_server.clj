@@ -40,7 +40,7 @@
   (assoc service-map ::http/routes
          (if (dev? service-map)
            ;; notice they used #(routes/routes) instead
-           routes/routes
+           #(routes/routes)
            (routes/routes))))
 
 (defn- start-server [service-map database]
