@@ -31,14 +31,15 @@
   [{:keys [tx-data] :as ctx}]
   (log/debug :transact tx-data)
   #_(def my-ctx ctx)
-  (when-let [result (when tx-data
+  (if-let [result (when tx-data
                              ;; only for dev-local / Client library
-                             #_(d/transact (connection ctx {:tx-data tx-data}))
+                    #_(d/transact (connection ctx {:tx-data tx-data}))
                              ;; only for Peer library - accepts tx-data directly and returns a future
-                             @(d/transact (connection ctx) tx-data)
-                             )]
-    (log/trace :tx-result result)
-    (assoc ctx :tx-result result)))
+                    @(d/transact (connection ctx) tx-data))]
+    (do (log/trace :tx-result result)
+        (assoc ctx :tx-result result))
+    (do (log/warn :tx-result "no result!")
+        ctx)))
 
 (defn- query!
   [{:keys [q-data] :as ctx}]
