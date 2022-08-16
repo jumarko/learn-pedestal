@@ -22,16 +22,11 @@
   (testing "create step"
     ;; first create a recipe so we can reference it
     (let [recipe-id (recipes-test/create-recipe)
-          {:keys [body]}
-          (tu/assert-response-body 201
-                                   :post "/steps"
-                                   :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
-                                             "Content-Type" "application/transit+json"}
-                                   :body (transit-write {:recipe-id recipe-id
-                                                         :description "My first recipe"
-                                                         :sort-order 1 ; TODO: not sure what this means
-                                                         }))
-          step-id (:step-id body)]
+          {:keys [step-id]} (tu/create-entity "/steps"
+                                              {:recipe-id recipe-id
+                                               :description "My first recipe"
+                                               :sort-order 1 ; TODO: not sure what this means
+                                               })]
       (is (uuid? step-id))
       (reset! step-id-store step-id)))
   #_(testing "retrieve recipe"
