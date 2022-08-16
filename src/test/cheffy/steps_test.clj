@@ -5,14 +5,9 @@
    [clojure.test :refer [deftest is testing]]
    [test-utils :as tu]))
 
-
-;; a bit nasty but does its work - this is set by 'create recipe' test
-;; and used by the subsequent tests
-;; It also has an advantage that you can run a single test such as 'retrieve recipe'
-;; manually without preparing the recipe first
 (def step-id-store (atom nil))
 
-(deftest recipes-test
+(deftest steps-test
   #_(testing "list recipes"
       (testing "with auth -- public and drafts"
         (let [{:keys [body]} (tu/assert-response-body 200
