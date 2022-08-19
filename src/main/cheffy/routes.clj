@@ -37,7 +37,8 @@
      ["/recipes/:recipe-id" :delete recipes-i/delete-recipe :route-name :delete-recipe]
 
      ;; Note: in the previous courses, steps routes were deeply nested under the /recipes/:recipe-id routes
-     ["/steps" :post steps/create-step :route-name :create-step]}))
+     ["/steps" :post steps/create-step :route-name :create-step]
+     ["/steps/:step-id" :put steps/upsert-step :route-name :update-step]}))
 
 ;; just as an example, here we show the 'terse' syntax - less verbose than in `table-routes`
 (comment
