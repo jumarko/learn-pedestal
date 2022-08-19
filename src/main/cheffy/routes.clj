@@ -31,9 +31,9 @@
    #{{:app-name :cheffy ::http/scheme :http ::http/host "localhost"}
      ;; now define the routes themselves
      ["/recipes" :get recipes-i/list-recipes-response :route-name :list-recipes]
-     ["/recipes" :post recipes-i/create-recipe :route-name :create-recipe]
+     ["/recipes" :post recipes-i/upsert-recipe :route-name :create-recipe]
      ["/recipes/:recipe-id" :get recipes-i/retrieve-recipe :route-name :get-recipes]
-     ["/recipes/:recipe-id" :put recipes-i/update-recipe :route-name :update-recipe]
+     ["/recipes/:recipe-id" :put recipes-i/upsert-recipe :route-name :update-recipe]
      ["/recipes/:recipe-id" :delete recipes-i/delete-recipe :route-name :delete-recipe]
 
      ;; Note: in the previous courses, steps routes were deeply nested under the /recipes/:recipe-id routes

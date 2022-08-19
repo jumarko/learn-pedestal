@@ -24,8 +24,8 @@
   (testing "list recipes"
     (testing "with auth -- public and drafts"
       (let [{:keys [body]} (tu/assert-response-body 200
-                                                 :get "/recipes"
-                                                 :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
+                                                    :get "/recipes"
+                                                    :headers tu/default-headers)]
         (is (vector? (get body "public")))
         (is (vector? (get body "drafts")))))
     (testing "without auth -- only public "
@@ -37,35 +37,32 @@
       (reset! recipe-id-store recipe-id)))
   (testing "retrieve recipe"
     (let [{:keys [body]} (tu/assert-response-body 200
-                                               :get (str "/recipes/" @recipe-id-store)
-                                               :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})]
+                                                  :get (str "/recipes/" @recipe-id-store)
+                                                  :headers tu/default-headers)]
       (is (uuid? (:recipe/recipe-id body)))))
   (testing "update recipe"
-    (tu/assert-response 200
-                     :put (str "/recipes/" @recipe-id-store)
-                     :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
-                               "Content-Type" "application/transit+json"}
-                     :body (transit-write {:name "updated name"
-                                           :public true
-                                           :prep-time 30
-                                           :img "https://github.com/clojure.png"}))
-    ;; get again and check that the name was updated
+    (tu/update-entity (str "/recipes/" @recipe-id-store)
+                      {:name "updated name"
+                       :public true
+                       :prep-time 30
+                       :img "https://github.com/clojure.png"})
+
+;; get again and check that the name was updated
     (is (= "updated name"
            (-> (tu/assert-response-body
                 200 :get (str "/recipes/" @recipe-id-store)
-                :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})
+                :headers tu/default-headers)
                :body
                :recipe/display-name))))
   (testing "delete recipe"
     (tu/assert-response 204
-                     :delete (str "/recipes/" @recipe-id-store)
-                     :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
-                               "Content-Type" "application/transit+json"})
+                        :delete (str "/recipes/" @recipe-id-store)
+                        :headers tu/default-headers)
 
     ;; get again and check that the name was updated
     (tu/assert-response 404
-                     :get (str "/recipes/" @recipe-id-store)
-                     :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"})))
+                        :get (str "/recipes/" @recipe-id-store)
+                        :headers tu/default-headers)))
 
 
 

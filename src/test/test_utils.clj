@@ -20,8 +20,12 @@
   ;; for destructuring, see https://clojure.org/guides/destructuring#_keyword_arguments
   [expected-status method path & options]
   (let [response (apply assert-response expected-status method path options)]
-    (update response :body transit-read)))
+    (if (= 204 expected-status)
+      response
+      (update response :body transit-read))))
 
+(def default-headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
+                      "Content-Type" "application/transit+json"})
 
 (defn create-entity
   "Creates a new entity at given path and returns response body.
@@ -30,7 +34,16 @@
   [path entity-data]
   (get (assert-response-body 201
                              :post path
-                             :headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
-                                       "Content-Type" "application/transit+json"}
+                             :headers default-headers
+                             :body (transit-write entity-data))
+       :body))
+
+(defn update-entity
+  "Updates an existing entity at given path and returns the response.
+  Asserts that the response status is 204."
+  [path entity-data]
+  (get (assert-response-body 204
+                             :put path
+                             :headers default-headers
                              :body (transit-write entity-data))
        :body))
