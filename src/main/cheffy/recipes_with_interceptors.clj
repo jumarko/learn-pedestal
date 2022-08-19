@@ -111,19 +111,14 @@
   (assoc ctx :response (if-let [id (:recipe-id ctx)]
                          (response/created (str "/recipes/" id)
                                            {:recipe-id id})
-                         {:status 200})))
+                         {:status 204})))
 
 
 (def recipe-interceptor (around ::recipe recipe-on-request recipe-on-response))
 
-(def create-recipe
+(def upsert-recipe
   [recipe-interceptor
    interceptors/transact-interceptor])
-
-(def update-recipe
-  [recipe-interceptor
-   interceptors/transact-interceptor])
-
 
 ;;; GET
 (defn find-recipe-on-request
