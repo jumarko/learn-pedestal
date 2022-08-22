@@ -6,11 +6,11 @@
    [ring.util.response :as response]))
 
 (defn step-on-request [{:keys [request] :as ctx}]
-  (let [{:keys [step-id description sort-order]} (:transit-params request)
+  (let [{:keys [recipe-id description sort-order]} (:transit-params request)
         step-id (or (some-> (get-in request [:path-params :step-id]) parse-uuid)
                     (random-uuid))]
     (assoc ctx
-           :tx-data [{:recipe/recipe-id step-id
+           :tx-data [{:recipe/recipe-id recipe-id
                       :recipe/steps [{:step/step-id step-id
                                       :step/description description
                                       :step/sort-order sort-order}]}]
