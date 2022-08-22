@@ -36,34 +36,16 @@
     (let [recipe-id (create-recipe)]
       (reset! recipe-id-store recipe-id)))
   (testing "retrieve recipe"
-    (let [{:keys [body]} (tu/assert-response-body 200
-                                                  :get (str "/recipes/" @recipe-id-store)
-                                                  :headers tu/default-headers)]
-      (is (uuid? (:recipe/recipe-id body)))))
+    (let [{:recipe/keys [recipe-id]} (tu/get-entity (str "/recipes/" @recipe-id-store))]
+      (is (uuid? recipe-id))))
   (testing "update recipe"
-    (tu/update-entity (str "/recipes/" @recipe-id-store)
-                      {:name "updated name"
-                       :public true
-                       :prep-time 30
-                       :img "https://github.com/clojure.png"})
-
-;; get again and check that the name was updated
     (is (= "updated name"
-           (-> (tu/assert-response-body
-                200 :get (str "/recipes/" @recipe-id-store)
-                :headers tu/default-headers)
-               :body
-               :recipe/display-name))))
+           (:recipe/display-name
+            (tu/update-entity (str "/recipes/" @recipe-id-store)
+                              {:name "updated name"
+                               :public true
+                               :prep-time 30
+                               :img "https://github.com/clojure.png"})))))
   (testing "delete recipe"
-    (tu/assert-response 204
-                        :delete (str "/recipes/" @recipe-id-store)
-                        :headers tu/default-headers)
-
-    ;; get again and check that the name was updated
-    (tu/assert-response 404
-                        :get (str "/recipes/" @recipe-id-store)
-                        :headers tu/default-headers)))
-
-
-
+    (tu/delete-entity (str "/recipes/" @recipe-id-store))))
 
