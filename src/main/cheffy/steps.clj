@@ -48,7 +48,7 @@
   [{:keys [q-result] :as ctx}]
   (if (empty? q-result)
     (assoc ctx :response (response/not-found (str "step not found: " (-> ctx :q-data :args first))))
-    (assoc ctx :response (response/response (first q-result)))))
+    (assoc ctx :response (response/response (ffirst q-result)))))
 
 (def find-step-interceptor (around ::find-step find-step-on-request find-step-on-response))
 

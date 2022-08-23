@@ -22,7 +22,9 @@
   (let [response (apply assert-response expected-status method path options)]
     (if (= 204 expected-status)
       response
-      (update response :body transit-read))))
+      (if (and (= 404 (:status response)) (not= 404 expected-status))
+        (throw (ex-info "Entity not found." {:path path :response-body (:body response)}))
+        (update response :body transit-read)))))
 
 (def default-headers {"Authorization" "auth|5fbf7db6271d5e0076903601"
                       "Content-Type" "application/transit+json"})
