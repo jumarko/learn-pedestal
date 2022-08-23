@@ -3,6 +3,7 @@
    [cheffy.recipes :as recipes]
    [cheffy.recipes-with-interceptors :as recipes-i]
    [cheffy.steps :as steps]
+   [cheffy.ingredients :as ingredients]
    [io.pedestal.http.route :as route]
    [io.pedestal.http :as http]))
 
@@ -40,7 +41,16 @@
      ["/steps" :post steps/upsert-step :route-name :create-step]
      ["/steps/:step-id" :get steps/retrieve-step :route-name :get-step]
      ["/steps/:step-id" :put steps/upsert-step :route-name :update-step]
-     ["/steps/:step-id" :delete steps/delete-step :route-name :delete-step]}))
+     ["/steps/:step-id" :delete steps/delete-step :route-name :delete-step]
+
+
+     ;; ingredients - notice again, that I'm also adding GET  for specific ingredient
+     ["/ingredients" :post ingredients/upsert-ingredient :route-name :create-ingredient]
+     ["/ingredients/:ingredient-id" :get ingredients/retrieve-ingredient :route-name :get-ingredient]
+     ["/ingredients/:ingredient-id" :put ingredients/upsert-ingredient :route-name :update-ingredient]
+     ["/ingredients/:ingredient-id" :delete ingredients/delete-ingredient :route-name :delete-ingredient]
+
+     }))
 
 ;; just as an example, here we show the 'terse' syntax - less verbose than in `table-routes`
 (comment
