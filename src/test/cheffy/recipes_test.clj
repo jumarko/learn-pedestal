@@ -1,6 +1,5 @@
 (ns cheffy.recipes-test
   (:require
-   [cheffy.util.transit :refer [transit-write]]
    [clojure.test :refer [deftest is testing]]
    [test-utils :as tu]))
 

@@ -11,14 +11,11 @@
    ;; only for dev-local / client-library
    #_[datomic.client.api :as d]
    [datomic.api :as d]
+   [cheffy.crud :as crud]
    [cheffy.interceptors :as interceptors]
    [cheshire.core :as json]
    [ring.util.response :as response]
-   [io.pedestal.http :as http]
-   [io.pedestal.interceptor :as interceptor]
-   ;; Note: there's also `middleware` function but that works on request and response respectively
-   ;; - it doesn't have access to the whole context
-   [io.pedestal.interceptor.helpers :refer [around]]))
+   [io.pedestal.http :as http]))
 
 ;; see shownotes for the episode: https://www.jacekschae.com/view/courses/learn-pedestal-pro/1366483-recipes/4269943-22-list-recipes
 ;; the output of our query will comply to this pattern
@@ -81,92 +78,20 @@
                    http/transit-body
                    list-recipes-response])
 
+(def id-key :recipe/recipe-id)
 
-;;; CREATE & UPDATE
+(defn- params->entity
+  [account-id entity-id {:keys [name public prep-time img] :as _params}]
+  {:recipe/recipe-id entity-id
+   :recipe/display-name name ; shadowing core function
+   :recipe/public? public
+   :recipe/prep-time prep-time
+   :recipe/image-url img
+   ;; owner is actually a ref
+   :recipe/owner [:account/account-id account-id]})
 
-;; the common interceptor used by both create and update operations.
-;; They differ only in recipe-id handling and the actual response 
-(defn recipe-on-request
-  [{:keys [request] :as ctx}]
-  (let [account-id (get-in request [:headers "authorization"])
-        ;; parse path param (for update) or assign random id (for create)
-        recipe-id (or (some-> (get-in request [:path-params :recipe-id])
-                              parse-uuid)
-                      (random-uuid))
-        {:keys [name public prep-time img]} (:transit-params request)]
-    (assoc ctx
-           :tx-data [{:recipe/recipe-id recipe-id
-                      :recipe/display-name name ; shadowing core function
-                      :recipe/public? public
-                      :recipe/prep-time prep-time
-                      :recipe/image-url img
-                      ;; owner is actually a ref
-                      :recipe/owner [:account/account-id account-id]}]
-           :recipe-id (when-not (get-in request [:path-params :recipe-id])
-                        ;; add only for create operation
-                        recipe-id))))
+(def upsert-recipe (crud/upsert id-key params->entity))
 
-(defn recipe-on-response
-  [ctx]
-  (assoc ctx :response (if-let [id (:recipe-id ctx)]
-                         (response/created (str "/recipes/" id)
-                                           {:recipe-id id})
-                         {:status 204})))
+(def retrieve-recipe (crud/retrieve id-key))
 
-
-(def recipe-interceptor (around ::recipe recipe-on-request recipe-on-response))
-
-(def upsert-recipe
-  [recipe-interceptor
-   interceptors/transact-interceptor])
-
-;;; GET
-(defn find-recipe-on-request
-  [ctx]
-  (prn "DEBUG:: find-recipe-on-request " find-recipe-on-request)
-  (let [recipe-id (parse-uuid (get-in ctx [:request :path-params :recipe-id]))]
-    (assoc ctx :q-data {:query '[:find (pull ?e pattern)
-                                 :in $ ?recipe-id pattern
-                                 :where [?e :recipe/recipe-id ?recipe-id]]
-                        ;; Notice that we do not add `db` as arg although it's required by datomic
-                        ;; - it is supplied by `query-interceptor`
-                        :args [recipe-id recipe-pattern]})))
-
-(defn find-recipe-on-response
-  [{:keys [q-result] :as ctx}]
-  (prn "DEBUG:: find-recipe-on-response " q-result)
-  (if (empty? q-result)
-    (assoc ctx :response (response/not-found (str "recipe not found: " (-> ctx :q-data :args first))))
-    (assoc ctx :response (response/response (query-result->recipe (first q-result))))))
-
-(def find-recipe-interceptor (around ::find-recipe find-recipe-on-request find-recipe-on-response))
-
-(def retrieve-recipe
-  [find-recipe-interceptor
-   interceptors/query-interceptor])
-
-
-;;; DELETE
-(defn retract-recipe-on-request
-  [ctx]
-  (let [recipe-id (parse-uuid (get-in ctx [:request :path-params :recipe-id]))]
-    (assoc ctx :tx-data [[:db/retractEntity [:recipe/recipe-id recipe-id]]])))
-
-(defn retract-recipe-on-response
-  [ctx]
-  (assoc ctx :response (response/status 204)))
-
-(def retract-recipe-interceptor
-  #_(around retract-recipe-on-request retract-recipe-on-response)
-  ;; verbose form - this is what `around` expands to:
-  (interceptor/interceptor
-   {:name ::retract-recipe
-    :enter retract-recipe-on-request
-    :leave retract-recipe-on-response}))
-
-(def delete-recipe
-  [retract-recipe-interceptor
-   ;; notice that I can add this one as the second interceptor because I want it to be applied
-   ;; after I added :tx-data to the context in `retract-recipe-response`
-   interceptors/transact-interceptor])
-
+(def delete-recipe (crud/delete id-key))

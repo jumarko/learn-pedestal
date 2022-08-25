@@ -1,6 +1,6 @@
 (ns cheffy.routes
   (:require
-   [cheffy.recipes :as recipes]
+   [cheffy.recipes-obsolete :as recipes-o]
    [cheffy.recipes-with-interceptors :as recipes-i]
    [cheffy.steps :as steps]
    [cheffy.ingredients :as ingredients]
@@ -15,11 +15,11 @@
    ;;      http://localhost:3001/recipes
    #{{:app-name :cheffy ::http/scheme :http ::http/host "localhost"}
      ;; now define the routes themselves
-     ["/recipes" :get #'recipes/list-recipes-response :route-name :list-recipes]
-     ["/recipes" :post #'recipes/create-recipe-response :route-name :create-recipe]
-     ["/recipes/:recipe-id" :get #'recipes/retrieve-recipe-response :route-name :get-recipes]
-     ["/recipes/:recipe-id" :put #'recipes/update-recipe-response :route-name :update-recipe]
-     ["/recipes/:recipe-id" :delete #'recipes/delete-recipe-response :route-name :delete-recipe]}))
+     ["/recipes" :get #'recipes-o/list-recipes-response :route-name :list-recipes]
+     ["/recipes" :post #'recipes-o/create-recipe-response :route-name :create-recipe]
+     ["/recipes/:recipe-id" :get #'recipes-o/retrieve-recipe-response :route-name :get-recipes]
+     ["/recipes/:recipe-id" :put #'recipes-o/update-recipe-response :route-name :update-recipe]
+     ["/recipes/:recipe-id" :delete #'recipes-o/delete-recipe-response :route-name :delete-recipe]}))
 ;; inspect `table-routes` again and notice `:path-params`:
 ;;     :path-params [:recipe-id]
 

@@ -10,6 +10,8 @@
   The sipmle (non-namespaced) version of `id-key` is used to lookup the ID in request's `:path-params`."
   (:require
    [cheffy.interceptors :as interceptors]
+   ;; Note: there's also `middleware` function but that works on request and response respectively
+   ;; - it doesn't have access to the whole context
    [io.pedestal.interceptor.helpers :refer [around]]
    [ring.util.response :as response]))
 
@@ -19,9 +21,10 @@
 ;;; CREATE + UPDATE
 (defn- entity-on-request [id-key params->entity-fn]
   (fn [{:keys [request] :as ctx}]
-    (let [entity-id (or (some-> (get-in request [:path-params (simple-id id-key)]) parse-uuid)
+    (let [account-id (get-in request [:headers "authorization"])
+          entity-id (or (some-> (get-in request [:path-params (simple-id id-key)]) parse-uuid)
                         (random-uuid))
-          entity (params->entity-fn entity-id (:transit-params request))]
+          entity (params->entity-fn account-id entity-id (:transit-params request))]
       (assoc ctx
              :tx-data [entity]
              :entity-id entity-id
@@ -37,9 +40,13 @@
                                {(simple-id id-key) entity-id})))))
 
 (defn upsert
-  "Takes id-key and a function to convert body parameters (:transit-params)
-  to a Datomic entity data suitable for passing as `:tx-data`
-  (the entity will be wrapped in a vector and passed as `:tx-data` without further modifications)."
+  "Takes id-key and a 3-argument function to convert body parameters (:transit-params)
+  to a Datomic entity data suitable for passing as `:tx-data`.
+  The entity will be wrapped in a vector and passed as `:tx-data` without further modifications.
+  The function takes the following arguments
+  - account-id (as per \"authorization\" header)
+  - entity-id (either found in :path-params as per simple version of `id-key` or random new UUID)
+  - :transit-params from the body of the request"
   [id-key params->entity-fn]
   [(around (entity-on-request id-key params->entity-fn) (entity-on-response id-key))
    interceptors/transact-interceptor])

@@ -5,7 +5,7 @@
 (def id-key :step/step-id)
 
 (defn- params->entity
-  [entity-id {:keys [recipe-id description sort-order] :as _params}]
+  [_account-id entity-id {:keys [recipe-id description sort-order] :as _params}]
   {:recipe/recipe-id recipe-id
    :recipe/steps [{:step/step-id entity-id
                    :step/description description

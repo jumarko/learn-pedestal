@@ -7,7 +7,7 @@
 (def id-key :ingredient/ingredient-id)
 
 (defn- params->entity
-  [entity-id {:keys [recipe-id name amount measure sort-order] :as _params}]
+  [_account-id entity-id {:keys [recipe-id name amount measure sort-order] :as _params}]
   {:recipe/recipe-id recipe-id
    :recipe/ingredients [{:ingredient/ingredient-id entity-id
                          :ingredient/display-name name
