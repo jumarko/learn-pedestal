@@ -1,4 +1,4 @@
-(ns cheffy.recipes
+(ns cheffy.recipes-obsolete
   (:require
    ;; only for dev-local / client-library
    #_[datomic.client.api :as d]
