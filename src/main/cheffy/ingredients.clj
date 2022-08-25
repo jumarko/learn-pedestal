@@ -4,7 +4,6 @@
   See also `seed.edn` file to explore ingredients data."
   (:require [cheffy.crud :as crud]))
 
-
 (def id-key :ingredient/ingredient-id)
 
 (defn- params->entity
