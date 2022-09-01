@@ -31,7 +31,7 @@
    ;;      http://localhost:3001/recipes
    #{{:app-name :cheffy ::http/scheme :http ::http/host "localhost"}
      ;; now define the routes themselves
-     ["/recipes" :get recipes-i/list-recipes-response :route-name :list-recipes]
+     ["/recipes" :get recipes-i/list-recipes :route-name :list-recipes]
      ["/recipes" :post recipes-i/upsert-recipe :route-name :create-recipe]
      ["/recipes/:recipe-id" :get recipes-i/retrieve-recipe :route-name :get-recipe]
      ["/recipes/:recipe-id" :put recipes-i/upsert-recipe :route-name :update-recipe]

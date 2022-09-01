@@ -8,14 +8,8 @@
   This really hampers debugging because functions' values are captured at the time the interceptors
   are defined and are thus hard to refresh (impossible with cider debugger?)"
   (:require
-   ;; only for dev-local / client-library
-   #_[datomic.client.api :as d]
-   [datomic.api :as d]
    [cheffy.crud :as crud]
-   [cheffy.interceptors :as interceptors]
-   [cheshire.core :as json]
-   [ring.util.response :as response]
-   [io.pedestal.http :as http]))
+   [clojure.set :as set]))
 
 ;; see shownotes for the episode: https://www.jacekschae.com/view/courses/learn-pedestal-pro/1366483-recipes/4269943-22-list-recipes
 ;; the output of our query will comply to this pattern
@@ -40,43 +34,40 @@
                        :ingredient/measure
                        :ingredient/sort-order]}])
 
+(defn- list-recipes-query [request]
+  (let [account-id (get-in request [:headers "authorization"])
+        base-query '[:find (pull ?e pattern)
+                     :in $ pattern]]
+    ;; Or clauses: https://docs.datomic.com/on-prem/query/query.html#or-clauses
+    ;; `or-join` is needed because the second clause (`and`) uses a different set of variables (`?owner`)
+    ;; Note: The fact that ?account-id can be nil complicates this.
+    ;; When it's nil, we have to leave out the entire owner filtering clause
+    {:query (if account-id
+              (conj base-query
+                    '?account-id
+                    :where '[or-join [?e]
+                             [?e :recipe/public? true]
+                             (and [?e :recipe/public? false]
+                                  [?owner :account/account-id ?account-id]
+                                  [?e :recipe/owner ?owner])])
+              (conj base-query :where '[?e :recipe/public? true]))
+     :args (cond-> [recipe-pattern]
+             account-id (conj account-id))}))
+
 (defn- query-result->recipe [[q-result]]
   (-> q-result
       (assoc :favorite-count (count (:account/_favorite_recipes q-result)))
       ;; now dissoc the key that we do not want to expose
       (dissoc :account/_favorite-recipes)))
 
-(defn- query-recipes [db account-id]
-  (let [;; notice that `pull` is a required symbol/function;
-        ;; instead is a special syntax recognized by datomic
-        public-recipes (d/q '[:find (pull ?e pattern)
-                              :in $ pattern
-                              :where [?e :recipe/public? true]]
+(defn- list-recipes-response [q-result]
+  (let [public-private-recipes (->> q-result
+                                    (mapv query-result->recipe)
+                                    (group-by :recipe/public?))]
+    (set/rename-keys public-private-recipes {true :public false :drafts})))
 
-                            db recipe-pattern)]
-    (cond-> {:public (mapv query-result->recipe public-recipes)}
-      account-id (merge
-                  {:drafts (mapv query-result->recipe
-                                 (d/q '[:find (pull ?e pattern)
-                                        :in $ ?account-id pattern
-                                        :where
-                                        [?owner :account/account-id ?account-id]
-                                        [?e :recipe/owner ?owner]
-                                        [?e :recipe/public? false]]
-                                      db account-id recipe-pattern))}))))
-
-(defn list-recipes-response [{:keys [system/database] :as request}]
-  #_(prn "DEBUG:: [request] " [request])
-  (let [db (:db database)
-        ;; For now, a really stupid authentication mechanism will work - just pass account id in the Authorization header
-        ;; - see response-for call in dev.clj
-        account-id (get-in request [:headers "authorization"])
-        recipes (query-recipes db account-id)]
-    (-> recipes json/generate-string response/response)))
-
-(def list-recipes [interceptors/db-interceptor
-                   http/transit-body
-                   list-recipes-response])
+(def list-recipes (crud/list list-recipes-query
+                             list-recipes-response))
 
 (def id-key :recipe/recipe-id)
 

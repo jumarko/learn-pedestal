@@ -18,6 +18,21 @@
 (defn simple-id [id-key]
   (keyword (name id-key)))
 
+;;; LIST (GET returning multiple entities)
+(defn- list-on-request [query-fn]
+  (fn [{:keys [request] :as ctx}]
+    (assoc ctx :q-data (query-fn request))))
+
+(defn- list-on-response [result-fn]
+  (fn [{:keys [q-result] :as ctx}]
+    (assoc ctx :response (response/response (result-fn q-result)))))
+
+
+(defn list [query-fn result-fn]
+  [(around (list-on-request query-fn) (list-on-response result-fn))
+   interceptors/query-interceptor])
+
+
 ;;; CREATE + UPDATE
 (defn- entity-on-request [id-key params->entity-fn]
   (fn [{:keys [request] :as ctx}]
