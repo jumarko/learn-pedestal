@@ -46,9 +46,9 @@
     (let [account-id (get-in request [:headers "authorization"])
           entity-id (or (some-> (get-in request [:path-params (simple-id id-key)]) parse-uuid)
                         (random-uuid))
-          entity (params->entity-fn account-id entity-id (:transit-params request))]
+          entities (params->entity-fn account-id entity-id (:transit-params request))]
       (assoc ctx
-             :tx-data [entity]
+             :tx-data entities
              :entity-id entity-id
              :update? (boolean (get-in request [:path-params (simple-id id-key)]))))))
 
@@ -63,7 +63,7 @@
 
 (defn upsert
   "Takes id-key and a 3-argument function to convert body parameters (:transit-params)
-  to a Datomic entity data suitable for passing as `:tx-data`.
+  to Datomic entity or entities - vector suitable for passing as `:tx-data`.
   The entity will be wrapped in a vector and passed as `:tx-data` without further modifications.
   The function takes the following arguments
   - account-id (as per \"authorization\" header)

@@ -53,6 +53,12 @@
 
      ;; conversations
      ["/conversations" :get conversations/list-conversations :route-name :list-conversations]
+     ["/conversations" :post conversations/create-message :route-name :create-message-without-conversation]
+     ;; Note: I use :put for creating messages for existing conversations,
+     ;; because it fits my framework better - see `crud/upsert` implementation
+     ["/conversations/:conversation-id" :put conversations/create-message :route-name :create-message-for-conversation]
+     ["/conversations/:conversation-id" :get conversations/retrieve-message :route-name :get-message]
+
 
      }))
 
