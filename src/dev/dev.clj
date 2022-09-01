@@ -26,6 +26,14 @@
 (defn restart-dev []
   (cr/reset))
 
+(defmacro with-db
+  "Helper macro that binds the latest db value  (as per `datomic.api/db`) to special symbol `$db`."
+  [& body]
+  `(let [conn# (-> cr/system :database :conn)
+         ~'$db (da/db conn#)]
+     ~@body))
+
+
 (comment
   (restart-dev)
 
@@ -59,14 +67,11 @@
   (restart-dev)
 
   ;; inspect the db quickly
-  (let [conn (-> cr/system :database :conn)
-        db (d/db conn)]
-    db)
+  (with-db $db)
 
   ;; check if accounts exist already
-  (let [conn (-> cr/system :database :conn)
-        db (d/db conn)]
-    (d/pull db {:eid :account/account-id :selector '[*]}))
+  (with-db (d/pull $db {:eid :account/account-id :selector '[*]}))
+  
   ;; => #:db{:id nil}
 
   ;; ... go to database.clj and add `load-dataset` function
@@ -335,54 +340,175 @@
 
 ;;; querying Datomic using datomic.api, not datomic.client.api.
 (comment
-  (let [conn (-> cr/system :database :conn)
-        db (da/db conn)]
-  (da/q '[:find (pull ?e [*])
-          :in $
-          :where (or-join [?e ?owner ?account-id]
-                          [?e :recipe/public? true]
-                          (and [?e :recipe/public? false]
-                               [?owner :account/account-id "auth|5fbf7db6271d5e0076903601"]
-                               [?e :recipe/owner ?owner]))]
-        db)
-  )
+  (with-db
+    (da/q '[:find (pull ?e [*])
+            :in $
+            :where (or-join [?e ?owner ?account-id]
+                            [?e :recipe/public? true]
+                            (and [?e :recipe/public? false]
+                                 [?owner :account/account-id "auth|5fbf7db6271d5e0076903601"]
+                                 [?e :recipe/owner ?owner]))]
+          $db))
 
-
-  (let [conn (-> cr/system :database :conn)
-        db (da/db conn)
-        recipe-pattern [:recipe/recipe-id
-                        :recipe/prep-time
-                        :recipe/display-name
-                        :recipe/image-url
-                        :recipe/public?
+  (with-db 
+    (let [recipe-pattern [:recipe/recipe-id
+                          :recipe/prep-time
+                          :recipe/display-name
+                          :recipe/image-url
+                          :recipe/public?
                           ;; Notice the reverse lookup with underscore: https://docs.datomic.com/cloud/query/query-pull.html#reverse-lookup
-                        :account/_favorite-recipes
-                        {:recipe/owner
-                         [:account/account-id
-                          :account/display-name]}
-                        {:recipe/steps
-                         [:step/step-id
-                          :step/description
-                          :step/sort-order]}
-                        {:recipe/ingredients
-                         [:ingredient/ingredient-id
-                          :ingredient/display-name
-                          :ingredient/amount
-                          :ingredient/measure
-                          :ingredient/sort-order]}]
-        account-id "auth|5fbf7db6271d5e0076903601"]
-    (filter
-     (fn [[r]]
-       (not (:recipe/public? r)))
-     (da/query
-      {:query '[:find (pull ?e pattern)
-                :in $ pattern ?account-id
-                ;; Or clauses: https://docs.datomic.com/on-prem/query/query.html#or-clauses
-                ;; `or-join` is needed because the second clause (`and`) uses a different set of variables
-                :where (or-join [?e]
-                                [?e :recipe/public? true]
-                                (and [?e :recipe/public? false]
-                                     [?owner :account/account-id ?account-id]
-                                     [?e :recipe/owner ?owner]))]
-       :args [db recipe-pattern account-id]})))
+                          :account/_favorite-recipes
+                          {:recipe/owner
+                           [:account/account-id
+                            :account/display-name]}
+                          {:recipe/steps
+                           [:step/step-id
+                            :step/description
+                            :step/sort-order]}
+                          {:recipe/ingredients
+                           [:ingredient/ingredient-id
+                            :ingredient/display-name
+                            :ingredient/amount
+                            :ingredient/measure
+                            :ingredient/sort-order]}]
+          account-id "auth|5fbf7db6271d5e0076903601"]
+      (filter
+       (fn [[r]]
+         (not (:recipe/public? r)))
+       (da/query
+        {:query '[:find (pull ?e pattern)
+                  :in $ pattern ?account-id
+                  ;; Or clauses: https://docs.datomic.com/on-prem/query/query.html#or-clauses
+                  ;; `or-join` is needed because the second clause (`and`) uses a different set of variables
+                  :where (or-join [?e]
+                                  [?e :recipe/public? true]
+                                  (and [?e :recipe/public? false]
+                                       [?owner :account/account-id ?account-id]
+                                       [?e :recipe/owner ?owner]))]
+         :args [$db recipe-pattern account-id]}))))
       .)
+
+
+;;; Lesson 43: list conversations
+(comment
+
+  (with-db
+    (da/q '[:find (pull ?c [*])
+            :in $ ?account-id
+            :where
+            [?a :account/account-id ?account-id]
+            [?c :conversation/participants ?a]]
+          $db "auth|5fbf7db6271d5e0076903601"))
+  ;;=>
+  [[{:db/id 17592186045438,
+   :conversation/conversation-id #uuid "8d4ab926-d5cc-483d-9af0-19627ed468eb",
+   :conversation/messages
+   [{:db/id 17592186045432,
+     :message/message-id #uuid "5ae8cafb-1773-4730-9d8d-a76bd872d110",
+     :message/body "First message",
+     :message/owner #:db{:id 17592186045418}}
+    {:db/id 17592186045433,
+     :message/message-id #uuid "1627c35a-d1da-4dd1-88be-aa101a1b5b98",
+     :message/body "Second message",
+     :message/owner #:db{:id 17592186045419}}
+    {:db/id 17592186045434,
+     :message/message-id #uuid "5ae8cafb-1773-4731-8d8d-a76bd872d110",
+     :message/body "Third message",
+     :message/owner #:db{:id 17592186045418}}],
+   :conversation/participants [#:db{:id 17592186045418} #:db{:id 17592186045419}]}]
+ [{:db/id 17592186045439,
+   :conversation/conversation-id #uuid "362d06c7-2702-4273-bcc3-0c04d2753b6f",
+   :conversation/messages
+   [{:db/id 17592186045435,
+     :message/message-id #uuid "0f3ebcf0-3c6f-4258-9074-924d60252973",
+     :message/body "First message",
+     :message/owner #:db{:id 17592186045418}}
+    {:db/id 17592186045436,
+     :message/message-id #uuid "dbcb3781-e070-4935-8b3f-afc48453bb20",
+     :message/body "Second message",
+     :message/owner #:db{:id 17592186045420}}],
+   :conversation/participants [#:db{:id 17592186045418} #:db{:id 17592186045420}]}]]
+
+  ;; or alternatively using pull syntax
+  (with-db 
+    (da/pull $db
+             '[{:conversation/_participants [*]}]
+             [:account/account-id "auth|5fbf7db6271d5e0076903601"]))
+  ;;=>
+#:conversation{:_participants
+               [{:db/id 17592186045438,
+                 :conversation/conversation-id #uuid "8d4ab926-d5cc-483d-9af0-19627ed468eb",
+                 :conversation/messages
+                 [{:db/id 17592186045432,
+                   :message/message-id #uuid "5ae8cafb-1773-4730-9d8d-a76bd872d110",
+                   :message/body "First message",
+                   :message/owner #:db{:id 17592186045418}}
+                  {:db/id 17592186045433,
+                   :message/message-id #uuid "1627c35a-d1da-4dd1-88be-aa101a1b5b98",
+                   :message/body "Second message",
+                   :message/owner #:db{:id 17592186045419}}
+                  {:db/id 17592186045434,
+                   :message/message-id #uuid "5ae8cafb-1773-4731-8d8d-a76bd872d110",
+                   :message/body "Third message",
+                   :message/owner #:db{:id 17592186045418}}],
+                 :conversation/participants [#:db{:id 17592186045418} #:db{:id 17592186045419}]}
+                {:db/id 17592186045439,
+                 :conversation/conversation-id #uuid "362d06c7-2702-4273-bcc3-0c04d2753b6f",
+                 :conversation/messages
+                 [{:db/id 17592186045435,
+                   :message/message-id #uuid "0f3ebcf0-3c6f-4258-9074-924d60252973",
+                   :message/body "First message",
+                   :message/owner #:db{:id 17592186045418}}
+                  {:db/id 17592186045436,
+                   :message/message-id #uuid "dbcb3781-e070-4935-8b3f-afc48453bb20",
+                   :message/body "Second message",
+                   :message/owner #:db{:id 17592186045420}}],
+                 :conversation/participants [#:db{:id 17592186045418} #:db{:id 17592186045420}]}]}
+
+
+;; let's use the conversation-pattern from the lesson
+(def conversation-pattern [:conversation/conversation-id
+                           {:conversation/messages
+                            [:message/message-id
+                             :message/body
+                             {:message/owner
+                              [:account/account-id
+                               :account/display-name]}]}])
+
+(with-db
+  (da/q '[:find (pull ?c pattern)
+          :in $ pattern ?account-id
+          :where
+          [?a :account/account-id ?account-id]
+          [?c :conversation/participants ?a]]
+        $db conversation-pattern "auth|5fbf7db6271d5e0076903601"))
+;;=>
+[[#:conversation{:conversation-id #uuid "8d4ab926-d5cc-483d-9af0-19627ed468eb",
+                 :messages
+                 [#:message{:message-id #uuid "5ae8cafb-1773-4730-9d8d-a76bd872d110",
+                            :body "First message",
+                            :owner
+                            #:account{:account-id "auth|5fbf7db6271d5e0076903601",
+                                      :display-name "Auth"}}
+                  #:message{:message-id #uuid "1627c35a-d1da-4dd1-88be-aa101a1b5b98",
+                            :body "Second message",
+                            :owner
+                            #:account{:account-id "mike@mailinator.com", :display-name "Mike"}}
+                  #:message{:message-id #uuid "5ae8cafb-1773-4731-8d8d-a76bd872d110",
+                            :body "Third message",
+                            :owner
+                            #:account{:account-id "auth|5fbf7db6271d5e0076903601",
+                                      :display-name "Auth"}}]}]
+ [#:conversation{:conversation-id #uuid "362d06c7-2702-4273-bcc3-0c04d2753b6f",
+                 :messages
+                 [#:message{:message-id #uuid "0f3ebcf0-3c6f-4258-9074-924d60252973",
+                            :body "First message",
+                            :owner
+                            #:account{:account-id "auth|5fbf7db6271d5e0076903601",
+                                      :display-name "Auth"}}
+                  #:message{:message-id #uuid "dbcb3781-e070-4935-8b3f-afc48453bb20",
+                            :body "Second message",
+                            :owner
+                            #:account{:account-id "jade@mailinator.com", :display-name "Jade"}}]}]]
+
+  ..)

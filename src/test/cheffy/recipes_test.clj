@@ -2,7 +2,6 @@
   (:require
    [clojure.test :refer [deftest is testing]]
    [test-utils :as tu]))
-
 ;; a bit nasty but does its work - this is set by 'create recipe' test
 ;; and used by the subsequent tests
 ;; It also has an advantage that you can run a single test such as 'retrieve recipe'
@@ -40,11 +39,9 @@
 
 (deftest list-recipes-test
   (testing "list recipes with auth -- public and drafts"
-    (let [{:keys [body]} (tu/assert-response-body 200
-                                                  :get "/recipes"
-                                                  :headers tu/default-headers)]
-      (is (not-empty (get body :public)))
-      (is (not-empty (get body :drafts)))))
+    (let [{:keys [public drafts]} (tu/list-entities "/recipes")]
+      (is (not-empty public))
+      (is (not-empty drafts))))
   (testing "list recipes without auth -- only public "
     (let [{:keys [body]} (tu/assert-response-body 200 :get "/recipes")]
       (is (not-empty (get body :public)))

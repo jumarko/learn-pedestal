@@ -35,6 +35,11 @@
   (get (assert-response-body 200 :get path :headers default-headers)
        :body))
 
+(defn list-entities
+  "Gets all the entities located at given path, asserts 200 response and returns body."
+  [path]
+  (get-entity path))
+
 (defn create-entity
   "Creates a new entity at given path and returns response body.
   Automatically adds Authorization header using one of the seed accounts.
