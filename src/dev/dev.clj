@@ -5,6 +5,8 @@
    [clojure.edn :as end]
    [com.stuartsierra.component.repl :as cr]
    [datomic.client.api :as d]
+   ;; use datomic peer library instead of client lib
+   [datomic.api :as da]
    [io.pedestal.http :as http]
    [io.pedestal.test :as pt]))
 
@@ -329,3 +331,58 @@
 
 
   .)
+
+
+;;; querying Datomic using datomic.api, not datomic.client.api.
+(comment
+  (let [conn (-> cr/system :database :conn)
+        db (da/db conn)]
+  (da/q '[:find (pull ?e [*])
+          :in $
+          :where (or-join [?e ?owner ?account-id]
+                          [?e :recipe/public? true]
+                          (and [?e :recipe/public? false]
+                               [?owner :account/account-id "auth|5fbf7db6271d5e0076903601"]
+                               [?e :recipe/owner ?owner]))]
+        db)
+  )
+
+
+  (let [conn (-> cr/system :database :conn)
+        db (da/db conn)
+        recipe-pattern [:recipe/recipe-id
+                        :recipe/prep-time
+                        :recipe/display-name
+                        :recipe/image-url
+                        :recipe/public?
+                          ;; Notice the reverse lookup with underscore: https://docs.datomic.com/cloud/query/query-pull.html#reverse-lookup
+                        :account/_favorite-recipes
+                        {:recipe/owner
+                         [:account/account-id
+                          :account/display-name]}
+                        {:recipe/steps
+                         [:step/step-id
+                          :step/description
+                          :step/sort-order]}
+                        {:recipe/ingredients
+                         [:ingredient/ingredient-id
+                          :ingredient/display-name
+                          :ingredient/amount
+                          :ingredient/measure
+                          :ingredient/sort-order]}]
+        account-id "auth|5fbf7db6271d5e0076903601"]
+    (filter
+     (fn [[r]]
+       (not (:recipe/public? r)))
+     (da/query
+      {:query '[:find (pull ?e pattern)
+                :in $ pattern ?account-id
+                ;; Or clauses: https://docs.datomic.com/on-prem/query/query.html#or-clauses
+                ;; `or-join` is needed because the second clause (`and`) uses a different set of variables
+                :where (or-join [?e]
+                                [?e :recipe/public? true]
+                                (and [?e :recipe/public? false]
+                                     [?owner :account/account-id ?account-id]
+                                     [?e :recipe/owner ?owner]))]
+       :args [db recipe-pattern account-id]})))
+      .)

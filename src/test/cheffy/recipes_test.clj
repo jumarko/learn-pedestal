@@ -19,18 +19,7 @@
     (is (uuid? recipe-id))
     recipe-id))
 
-(deftest recipes-test
-  (testing "list recipes"
-    (testing "with auth -- public and drafts"
-      (let [{:keys [body]} (tu/assert-response-body 200
-                                                    :get "/recipes"
-                                                    :headers tu/default-headers)]
-        (is (vector? (get body "public")))
-        (is (vector? (get body "drafts")))))
-    (testing "without auth -- only public "
-      (let [{:keys [body]} (tu/assert-response-body 200 :get "/recipes")]
-        (is (vector? (get body "public")))
-        (is (nil? (get body "drafts"))))))
+(deftest recipes-crud-test
   (testing "create recipe"
     (let [recipe-id (create-recipe)]
       (reset! recipe-id-store recipe-id)))
@@ -48,3 +37,15 @@
   (testing "delete recipe"
     (tu/delete-entity (str "/recipes/" @recipe-id-store))))
 
+
+(deftest list-recipes-test
+  (testing "list recipes with auth -- public and drafts"
+    (let [{:keys [body]} (tu/assert-response-body 200
+                                                  :get "/recipes"
+                                                  :headers tu/default-headers)]
+      (is (not-empty (get body :public)))
+      (is (not-empty (get body :drafts)))))
+  (testing "list recipes without auth -- only public "
+    (let [{:keys [body]} (tu/assert-response-body 200 :get "/recipes")]
+      (is (not-empty (get body :public)))
+      (is (not (contains? body :drafts))))))
