@@ -28,7 +28,14 @@
     (assoc ctx :response (response/response (result-fn q-result)))))
 
 
-(defn list [query-fn result-fn]
+(defn list
+  "Defines route handler for handling listing operation, that is a GET
+  returning all the entities that satisfy a datomic query.
+  The query is provided  by `query-fn` which must accept 1 argument (http request).
+  The result is transformed via `result-fn` which must accept 1 argument (query result - see interceptors).
+  The transformed result is then returned as an HTTP response.
+  "
+  [query-fn result-fn]
   [(around (list-on-request query-fn) (list-on-response result-fn))
    interceptors/query-interceptor])
 

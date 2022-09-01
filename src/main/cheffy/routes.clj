@@ -5,7 +5,8 @@
    [cheffy.steps :as steps]
    [cheffy.ingredients :as ingredients]
    [io.pedestal.http.route :as route]
-   [io.pedestal.http :as http]))
+   [io.pedestal.http :as http]
+   [cheffy.conversations :as conversations]))
 
 ;; The former routes using `recipes` ns
 #_(def table-routes
@@ -49,6 +50,9 @@
      ["/ingredients/:ingredient-id" :get ingredients/retrieve-ingredient :route-name :get-ingredient]
      ["/ingredients/:ingredient-id" :put ingredients/upsert-ingredient :route-name :update-ingredient]
      ["/ingredients/:ingredient-id" :delete ingredients/delete-ingredient :route-name :delete-ingredient]
+
+     ;; conversations
+     ["/conversations" :get conversations/list-conversations :route-name :list-conversations]
 
      }))
 
