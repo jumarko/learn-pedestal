@@ -73,13 +73,13 @@
 
 (defn- params->entity
   [account-id entity-id {:keys [name public prep-time img] :as _params}]
-  {:recipe/recipe-id entity-id
-   :recipe/display-name name ; shadowing core function
-   :recipe/public? public
-   :recipe/prep-time prep-time
-   :recipe/image-url img
-   ;; owner is actually a ref
-   :recipe/owner [:account/account-id account-id]})
+  [{:recipe/recipe-id entity-id
+    :recipe/display-name name ; shadowing core function
+    :recipe/public? public
+    :recipe/prep-time prep-time
+    :recipe/image-url img
+    ;; owner is actually a ref
+    :recipe/owner [:account/account-id account-id]}])
 
 (def upsert-recipe (crud/upsert id-key params->entity))
 

@@ -8,12 +8,12 @@
 
 (defn- params->entity
   [_account-id entity-id {:keys [recipe-id name amount measure sort-order] :as _params}]
-  {:recipe/recipe-id recipe-id
-   :recipe/ingredients [{:ingredient/ingredient-id entity-id
-                         :ingredient/display-name name
-                         :ingredient/amount amount
-                         :ingredient/measure measure
-                         :ingredient/sort-order sort-order}]})
+  [{:recipe/recipe-id recipe-id
+    :recipe/ingredients [{:ingredient/ingredient-id entity-id
+                          :ingredient/display-name name
+                          :ingredient/amount amount
+                          :ingredient/measure measure
+                          :ingredient/sort-order sort-order}]}])
 
 (def upsert-ingredient (crud/upsert id-key params->entity))
 

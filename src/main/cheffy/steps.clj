@@ -6,10 +6,10 @@
 
 (defn- params->entity
   [_account-id entity-id {:keys [recipe-id description sort-order] :as _params}]
-  {:recipe/recipe-id recipe-id
-   :recipe/steps [{:step/step-id entity-id
-                   :step/description description
-                   :step/sort-order sort-order}]})
+  [{:recipe/recipe-id recipe-id
+    :recipe/steps [{:step/step-id entity-id
+                    :step/description description
+                    :step/sort-order sort-order}]}])
 
 (def upsert-step (crud/upsert id-key params->entity))
 
