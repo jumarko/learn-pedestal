@@ -31,7 +31,8 @@
   [account-id entity-id {:keys [to message-body] :as _params}]
   (let [from-ref [:account/account-id account-id]
         to-ref [:account/account-id to]
-        message-id (random-uuid)]
+        message-id (random-uuid)
+        now (java.util.Date.)]
     [#:conversation{:conversation-id entity-id
                     :participants [from-ref to-ref]
                     ;; Note: we really need to call `str` on message-id, otherwise we get a nasty error:
@@ -43,7 +44,7 @@
                ;; TODO: what does read-by really mean?
                :read-by [from-ref]
                :body message-body
-               :created-at (java.util.Date.)}]))
+               :created-at now}]))
 
 (def create-message (crud/upsert id-key params->entity))
 
