@@ -39,11 +39,13 @@
   [(around (list-on-request query-fn) (list-on-response result-fn))
    interceptors/query-interceptor])
 
+(defn get-account-id [ctx]
+  (get-in ctx [:request :headers "authorization"]))
 
 ;;; CREATE + UPDATE
 (defn- entity-on-request [id-key params->entity-fn]
   (fn [{:keys [request] :as ctx}]
-    (let [account-id (get-in request [:headers "authorization"])
+    (let [account-id (get-account-id ctx)
           entity-id (or (some-> (get-in request [:path-params (simple-id id-key)]) parse-uuid)
                         (random-uuid))
           entities (params->entity-fn account-id entity-id (:transit-params request))]
