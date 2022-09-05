@@ -58,6 +58,7 @@
      ;; because it fits my framework better - see `crud/upsert` implementation
      ["/conversations/:conversation-id" :put conversations/create-message :route-name :create-message-for-conversation]
      ["/conversations/:conversation-id" :get conversations/retrieve-message :route-name :get-message]
+     ["/conversations/:conversation-id" :delete conversations/clear-notifications :route-name :clear-notifications]
 
 
      }))

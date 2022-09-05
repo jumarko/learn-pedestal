@@ -27,7 +27,7 @@
    {:name ::db-interceptor
     :enter inject-db}))
 
-(defn- transact!
+(defn transact!
   [{:keys [tx-data] :as ctx}]
   (log/debug :transact tx-data)
   #_(def my-ctx ctx)
@@ -41,7 +41,7 @@
     (do (log/warn :tx-result "no result!")
         ctx)))
 
-(defn- query!
+(defn query!
   [{:keys [q-data] :as ctx}]
   (log/debug :q-data q-data :database (database ctx))
   (let [q-with-db (update q-data :args #(into [(database ctx)] %))]
