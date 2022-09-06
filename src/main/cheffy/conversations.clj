@@ -68,7 +68,7 @@
                                  :where
                                  [?a :account/account-id ?account-id]
                                  [?c :conversation/conversation-id ?conversation-id]
-                                 [?c conversation/participants ?a]
+                                 [?c :conversation/participants ?a]
                                  [?c :conversation/messages ?m]]
                         :args [account-id conversation-id]}))
        :q-result
