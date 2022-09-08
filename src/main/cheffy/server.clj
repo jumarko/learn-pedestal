@@ -3,13 +3,15 @@
    [cheffy.components.api-server :as api-server]
    [cheffy.components.database :as database]
    [clojure.edn :as edn]
-   [com.stuartsierra.component :as component]))
+   [com.stuartsierra.component :as component]
+   [cheffy.components.auth :as auth]))
 
 (defn create-system [config]
   (component/system-map
    :config config
    :api-server (component/using (api-server/make-api-server (:service-map config))
-                               [:database])
+                                [:database])
+   :auth (auth/make-auth-service (:auth config))
    :database (database/make-db (:database config))))
 
 ;; define main method to be able to start our server

@@ -6,11 +6,15 @@
 
   For the aws client to work properly, you have to configure aws cli.
   If you use multiple profiles, then you need to specify :credentials-provider too.
+
+  To calculate proper SecretHash value, see
+  https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash
   "
   (:require
    [clojure.string :as str]
    [cognitect.aws.client.api :as aws]
-   [cognitect.aws.credentials :as credentials]))
+   [cognitect.aws.credentials :as credentials]
+   [cheffy.util.crypto :as crypto]))
 
 ;; this is what I have in my ~/.aws/config
 ;;   [profile jumar]
@@ -24,23 +28,27 @@
 ;;  profile-region-provider
 ;;  instance-region-provider
 
-(def cognito (aws/client {:api :cognito-idp
-                          :credentials-provider (credentials/profile-credentials-provider my-aws-profile)
-                          ;; specify region explicitly just in case
-                          ;; if you don't do this, then :region-provider is used,
-                          ;; which by default is `cognitect.aws.region/default-region-provider` (see above)
-                          ;; - for some reason, it wasn't working properly for me (probably using eu-west-1 or something else)
-                          :region "us-east-1"}))
+(defn make-client []
+  (let [cognito (aws/client {:api :cognito-idp
+                            :credentials-provider (credentials/profile-credentials-provider my-aws-profile)
+                            ;; specify region explicitly just in case
+                            ;; if you don't do this, then :region-provider is used,
+                            ;; which by default is `cognitect.aws.region/default-region-provider` (see above)
+                            ;; - for some reason, it wasn't working properly for me (probably using eu-west-1 or something else)
+                            :region "us-east-1"})]
+    (aws/validate-requests cognito true)
+    cognito))
 
 ;; enable spec checking on invoke calls - those will throw a spec error if the request is invalid
-(aws/validate-requests cognito true)
+
 
 
 ;; play with aws-api
 (comment
 
+  (def my-cognito (make-client))
   (filterv (fn [[op details]] (str/includes? (str/lower-case (name op)) "signup"))
-           (aws/ops cognito))
+           (aws/ops my-cognito))
   ;;=>
   ;; [[:SignUp
   ;; {:name "SignUp",
@@ -65,13 +73,13 @@
   ;; ...
 
   ;; get the docs printed in the repl
-  (aws/doc cognito :SignUp)
+  (aws/doc my-cognito :SignUp)
   ;; ...
   ;; Required
   ;; [:ClientId :Username :Password]
   ;; ...
 
-  (-> (aws/invoke cognito
+  (-> (aws/invoke my-cognito
                {:op :SignUp
                 ;; look here to find the client information: https://us-east-1.console.aws.amazon.com/cognito/v2/idp/user-pools/us-east-1_naCTUkfCg/app-integration/clients/60c14ln0t3saa1jg2e0q13oj2v?region=us-east-1
                 :request {:ClientId "60c14ln0t3saa1jg2e0q13oj2v"
@@ -94,7 +102,7 @@
   ;;=> solved by passing :region "us-east-1" when constructing the client
 
   ;; now try again
-  (aws/invoke cognito
+  (aws/invoke my-cognito
               {:op :SignUp
                ;; look here to find the client information: https://us-east-1.console.aws.amazon.com/cognito/v2/idp/user-pools/us-east-1_naCTUkfCg/app-integration/clients/60c14ln0t3saa1jg2e0q13oj2v?region=us-east-1
                :request {:ClientId "60c14ln0t3saa1jg2e0q13oj2v"
@@ -106,5 +114,32 @@
 
   ;; that was an expected error - I'll have to pass :SecretHash which we'll do in the next lesson
 
+
+  .)
+
+;;; pass :SecretHash
+(defn calculate-secret-hash
+  "See https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash"
+  [{:keys [client-id client-secret username]}]
+  ;; notice that we are sining a concatenation username + client-id
+  (crypto/hmac-sha256-base64 client-secret (str username client-id)))
+
+(comment
+  (calculate-secret-hash {:client-id "abc"
+                          :client-secret "xxx"
+                          :username "jumarko@example.com"})
+;; => "5ux0qdUfS0vc3w2hpZzIhskFDmFJhbLBxvsFJM4X1Us="
+
+  (let [client-id "60c14ln0t3saa1jg2e0q13oj2v"
+        client-secret "xxx"]
+    (aws/invoke my-cognito
+                {:op :SignUp
+                 ;; look here to find the client information: https://us-east-1.console.aws.amazon.com/cognito/v2/idp/user-pools/us-east-1_naCTUkfCg/app-integration/clients/60c14ln0t3saa1jg2e0q13oj2v?region=us-east-1
+                 :request {:ClientId client-id
+                           :Username"jumarko@gmail.com" ; this is aws username
+                           :Password "Pas$w0rd"
+                           :SecretHash (calculate-secret-hash {:client-id client-id
+                                                               :client-secret client-secret
+                                                               :username "jumarko@gmail.com"})}}))
 
   .)

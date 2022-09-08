@@ -512,3 +512,9 @@
                             #:account{:account-id "jade@mailinator.com", :display-name "Jade"}}]}]]
 
   ..)
+
+;; 56: Adding auth component
+(comment
+  (-> cr/system :auth :config :client-id)
+  ;; => "60c14ln0t3saa1jg2e0q13oj2v"
+  .)

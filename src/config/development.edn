@@ -19,4 +19,10 @@
 
             :storage-dir :mem ; only needed for dev-local
             :system "dev" ; in the video they used "api.learnpedestal.com"
-            :db-name "learn-pedestal-development"}}
+            :db-name "learn-pedestal-development"}
+ ;; see https://us-east-1.console.aws.amazon.com/cognito/v2/idp/user-pools/us-east-1_naCTUkfCg/app-integration/clients/60c14ln0t3saa1jg2e0q13oj2v?region=us-east-1
+ :auth {:client-id "60c14ln0t3saa1jg2e0q13oj2v"
+        ;; TODO: replace with proper secret but make sure it's not committed
+        :client-secret "CLIENT_SECRET"
+        ;; see https://us-east-1.console.aws.amazon.com/cognito/v2/idp/user-pools?region=us-east-1
+        :user-pool-id "us-east-1_naCTUkfCg"}}
