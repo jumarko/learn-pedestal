@@ -1,12 +1,12 @@
 (ns cheffy.routes
   (:require
-   [cheffy.recipes-obsolete :as recipes-o]
+   [cheffy.account :as account]
+   [cheffy.conversations :as conversations]
+   [cheffy.ingredients :as ingredients]
    [cheffy.recipes-with-interceptors :as recipes-i]
    [cheffy.steps :as steps]
-   [cheffy.ingredients :as ingredients]
-   [io.pedestal.http.route :as route]
    [io.pedestal.http :as http]
-   [cheffy.conversations :as conversations]))
+   [io.pedestal.http.route :as route]))
 
 ;; The former routes using `recipes` ns
 #_(def table-routes
@@ -31,7 +31,11 @@
    ;; - otherwise you will get NOT FOUND in the browser when you try something like
    ;;      http://localhost:3001/recipes
    #{{:app-name :cheffy ::http/scheme :http ::http/host "localhost"}
-     ;; now define the routes themselves
+
+     ;; accounts routes
+     ["/account/sign-up" :post account/sign-up :route-name :sign-up]
+
+     ;; recipes routes
      ["/recipes" :get recipes-i/list-recipes :route-name :list-recipes]
      ["/recipes" :post recipes-i/upsert-recipe :route-name :create-recipe]
      ["/recipes/:recipe-id" :get recipes-i/retrieve-recipe :route-name :get-recipe]
