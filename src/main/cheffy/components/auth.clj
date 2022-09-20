@@ -20,12 +20,14 @@
 (defn create-cognito-account
   [{:keys [config cognito-idp] :as _auth}
    {:keys [email password] :as _params}]
-  (let [{:keys [client-id client-secret]} config]
-    (aws/invoke cognito-idp
-                {:op :SignUp
-                 :request {:ClientId client-id
-                           :Username email
-                           :Password password
-                           :SecretHash (cognito/calculate-secret-hash {:client-id client-id
-                                                                       :client-secret client-secret
-                                                                       :username email})}})))
+  (let [{:keys [client-id client-secret]} config
+        result (aws/invoke cognito-idp
+                           {:op :SignUp
+                            :request {:ClientId client-id
+                                      :Username email
+                                      :Password password
+                                      :SecretHash (cognito/calculate-secret-hash {:client-id client-id
+                                                                                  :client-secret client-secret
+                                                                                  :username email})}})]
+    (when (contains? result :cognitect.anomalies/category)
+      (throw (ex-info "Create cognito account failed" result)))))
