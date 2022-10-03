@@ -34,6 +34,7 @@
 
      ;; accounts routes
      ["/account/sign-up" :post account/sign-up :route-name :sign-up]
+     ["/account/confirm" :post account/confirm :route-name :sign-up]
 
      ;; recipes routes
      ["/recipes" :get recipes-i/list-recipes :route-name :list-recipes]
