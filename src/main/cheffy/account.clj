@@ -1,5 +1,6 @@
 (ns cheffy.account
   (:require
+   [cheffy.components.auth :as auth]
    [cheffy.interceptors :as interceptors]
    [io.pedestal.interceptor.helpers :refer [around]]
    [ring.util.response :as response]))
